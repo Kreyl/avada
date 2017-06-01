@@ -1,1 +1,6 @@
 Avada2_fw/.settings/language.settings.xml
+Avada_fw/.settings/language.settings.xml
+*.elf
+Avada_fw/Debug/
+*.dsn
+*.kicad_pcb-bak

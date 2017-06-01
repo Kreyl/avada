@@ -37,12 +37,12 @@ int main(void) {
 
     // ==== Init Hard & Soft ====
     JtagDisable();
-    Uart.Init(57600);
+    Uart.Init(115200);
     Led.Init();
     Buzzer.Init();
     Keys.Init(chThdSelf());
 
-    Uart.Printf("\rAvada2  AHB=%u; APB1=%u; APB2=%u\r", Clk.AHBFreqHz, Clk.APB1FreqHz, Clk.APB2FreqHz);
+    Uart.Printf("\rAvada3  AHB=%u; APB1=%u; APB2=%u\r", Clk.AHBFreqHz, Clk.APB1FreqHz, Clk.APB2FreqHz);
     Flash.Restart();
 
     // ==== Main cycle ====
@@ -52,10 +52,10 @@ int main(void) {
         if(EvtMsk & EVTMSK_KEY_FIRE) {
             Uart.Printf("KeyFire\r");
             if(Flash.IsReady()) {
-                Buzzer.SetVolume(VOLUME_MAX);
-                chThdSleepMilliseconds(4005);
-                Buzzer.Off();
-                chThdSleepMilliseconds(504);
+//                Buzzer.SetVolume(VOLUME_MAX);
+//                chThdSleepMilliseconds(4005);
+//                Buzzer.Off();
+//                chThdSleepMilliseconds(504);
                 Flash.Fire();
                 Flash.Restart();
             }

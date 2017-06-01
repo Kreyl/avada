@@ -3,18 +3,18 @@
 	<Version current="1"/>
 	<Format>Project</Format>
 	<Header>
-		<Program name="TopoR" version="5.3"/>
-		<GUID>{9A2C911C-77A0-4704-A1C4-2BFD6D6EA4B6}</GUID>
+		<Program name="TopoR" version="6.0"/>
+		<GUID>{C7EC7213-A582-42CA-8014-B85E31C2CE80}</GUID>
 		<Annotation>Project file</Annotation>
 	</Header>
 	<Document>
 		<LocalLibrary />
 		<Pcb>
-			<File path=".\avada2.fsx" Folder="-1" isopened="1"/>
+			<File path=".\avada3.fsx" Folder="-1" isopened="0"/>
 		</Pcb>
 		<Import>
 			<Specctra>
-			<Path name="D:\Nute\MagicThings\Avada2\avada2_hw\avada2.dsn"/>
+			<Path name="D:\Nute\MagicThings\Avada\Avada3\avada3_hw\avada3.dsn"/>
 			</Specctra>
 		</Import>
 		<ARouteSessions>
