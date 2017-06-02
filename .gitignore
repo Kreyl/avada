@@ -4,3 +4,4 @@ Avada_fw/.settings/language.settings.xml
 Avada_fw/Debug/
 *.dsn
 *.kicad_pcb-bak
+*.ses
