@@ -15,13 +15,13 @@
 */
 
 /**
- * @file    STM32F0xx/cmparams.h
- * @brief   ARM Cortex-M0 parameters for the STM32F0xx.
+ * @file    STM32L1xx/cmparams.h
+ * @brief   ARM Cortex-M3 parameters for the STM32L1xx.
  *
- * @defgroup ARMCMx_STM32F0xx STM32F0xx Specific Parameters
+ * @defgroup ARMCMx_STM32L1xx STM32L1xx Specific Parameters
  * @ingroup ARMCMx_SPECIFIC
- * @details This file contains the Cortex-M0 specific parameters for the
- *          STM32F0xx platform.
+ * @details This file contains the Cortex-M3 specific parameters for the
+ *          STM32L1xx platform.
  * @{
  */
 
@@ -31,7 +31,7 @@
 /**
  * @brief   Cortex core model.
  */
-#define CORTEX_MODEL            0
+#define CORTEX_MODEL            3
 
 /**
  * @brief   Floating Point unit presence.
@@ -41,14 +41,14 @@
 /**
  * @brief   Number of bits in priority masks.
  */
-#define CORTEX_PRIORITY_BITS    2
+#define CORTEX_PRIORITY_BITS    4
 
 /**
  * @brief   Number of interrupt vectors.
  * @note    This number does not include the 16 system vectors and must be
  *          rounded to a multiple of 8.
  */
-#define CORTEX_NUM_VECTORS      32
+#define CORTEX_NUM_VECTORS      64
 
 /* The following code is not processed when the file is included from an
    asm module.*/
@@ -57,19 +57,24 @@
 /* If the device type is not externally defined, for example from the Makefile,
    then a file named board.h is included. This file must contain a device
    definition compatible with the vendor include file.*/
-#if !defined (STM32F030x6) && !defined (STM32F030x8) &&                     \
-    !defined (STM32F031x6) && !defined (STM32F038xx) &&                     \
-    !defined (STM32F042x6) && !defined (STM32F048xx) &&                     \
-    !defined (STM32F051x8) && !defined (STM32F058xx) &&                     \
-    !defined (STM32F071xB) && !defined (STM32F072xB) &&                     \
-    !defined (STM32F078xx)
+#if !defined(STM32L100xB)  && !defined(STM32L100xBA) &&                     \
+    !defined(STM32L100xC)  && !defined(STM32L151xB)  &&                     \
+    !defined(STM32L151xBA) && !defined(STM32L151xC)  &&                     \
+    !defined(STM32L151xCA) && !defined(STM32L151xD)  &&                     \
+    !defined(STM32L151xDX) && !defined(STM32L151xE)  &&                     \
+    !defined(STM32L152xB)  && !defined(STM32L152xBA) &&                     \
+    !defined(STM32L152xC)  && !defined(STM32L152xCA) &&                     \
+    !defined(STM32L152xD)  && !defined(STM32L152xDX) &&                     \
+    !defined(STM32L152xE)  && !defined(STM32L162xC)  &&                     \
+    !defined(STM32L162xCA) && !defined(STM32L162xD)  &&                     \
+    !defined(STM32L162xDX) && !defined(STM32L162xE)
 #include "board.h"
 #endif
 
 /* Including the device CMSIS header. Note, we are not using the definitions
    from this header because we need this file to be usable also from
    assembler source files. We verify that the info matches instead.*/
-#include "stm32f0xx.h"
+#include "stm32l1xx.h"
 
 #if CORTEX_MODEL != __CORTEX_M
 #error "CMSIS __CORTEX_M mismatch"
@@ -78,6 +83,9 @@
 #if CORTEX_PRIORITY_BITS != __NVIC_PRIO_BITS
 #error "CMSIS __NVIC_PRIO_BITS mismatch"
 #endif
+
+/* Fix for yet another consistency error in ST headers.*/
+#define SVCall_IRQn SVC_IRQn
 
 #endif /* !defined(_FROM_ASM_) */
 

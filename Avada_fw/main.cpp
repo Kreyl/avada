@@ -1,11 +1,10 @@
 #include "hal.h"
 #include "MsgQ.h"
-#include "Sequences.h"
 #include "shell.h"
+#include "uart.h"
 #include "SimpleSensors.h"
 #include "buttons.h"
 #include "board.h"
-#include "led.h"
 #include "buzzer.h"
 
 #define FLASH_DURATION  54
@@ -22,6 +21,7 @@ void FlashCallback(void *p);
 class GreenFlash_t {
 private:
     virtual_timer_t ITmr;
+
     void LedOn() {}
 public:
     void Fire() {
@@ -32,6 +32,13 @@ public:
     void Restart() { Buzzer.BuzzUp(); }
     bool IsReady() { return Buzzer.IsOnTop(); }
     void LedOff() {}
+    void Init() {
+        // Init pin
+//        PinSetupOut()
+        // Init DAC
+
+
+    }
 } GreenFlash;
 
 void FlashCallback(void *p) {
@@ -40,7 +47,9 @@ void FlashCallback(void *p) {
 
 int main(void) {
     // ==== Init Clock system ====
-    Clk.SetupBusDividers(ahbDiv2, apbDiv1);
+    SetupVCore(vcore1V5);
+    Clk.EnablePrefetch();
+    Clk.SetMSI4MHz();
     Clk.UpdateFreqValues();
 
     // === Init OS ===
@@ -54,12 +63,7 @@ int main(void) {
     Clk.PrintFreqs();
 
     Buzzer.Init();
-
-//    PinSetupOut(GPIOB, 9, omPushPull);
-//    PinSetHi(GPIOB, 9);
-
-//    Led.Init();
-//    Led.SetupSeqEndEvt(EVT_LED_DONE);
+    GreenFlash.Init();
 
     SimpleSensors::Init();
     GreenFlash.Restart();

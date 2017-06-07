@@ -18,8 +18,8 @@
 */
 
 /**
- * @file    compilers/GCC/chcoreasm_v6m.s
- * @brief   ARMv6-M architecture port low level code.
+ * @file    compilers/GCC/chcoreasm_v7m.s
+ * @brief   ARMv7-M architecture port low level code.
  *
  * @addtogroup ARMCMx_GCC_CORE
  * @{
@@ -42,10 +42,14 @@
                 .set    CONTEXT_OFFSET, 12
                 .set    SCB_ICSR, 0xE000ED04
                 .set    ICSR_PENDSVSET, 0x10000000
-                .set    ICSR_NMIPENDSET, 0x80000000
 
-                .cpu    cortex-m0
+                .syntax unified
+                .cpu    cortex-m4
+#if CORTEX_USE_FPU
+                .fpu    fpv4-sp-d16
+#else
                 .fpu    softvfp
+#endif
 
                 .thumb
                 .text
@@ -56,24 +60,26 @@
                 .thumb_func
                 .globl  _port_switch
 _port_switch:
-                push    {r4, r5, r6, r7, lr}
-                mov     r4, r8
-                mov     r5, r9
-                mov     r6, r10
-                mov     r7, r11
-                push    {r4, r5, r6, r7}
-                
-                mov     r3, sp
-                str     r3, [r1, #CONTEXT_OFFSET]
+                push    {r4, r5, r6, r7, r8, r9, r10, r11, lr}
+#if CORTEX_USE_FPU
+                vpush   {s16-s31}
+#endif
+
+                str     sp, [r1, #CONTEXT_OFFSET]
+#if (CORTEX_SIMPLIFIED_PRIORITY == FALSE) &&                                \
+    ((CORTEX_MODEL == 3) || (CORTEX_MODEL == 4))
+                /* Workaround for ARM errata 752419, only applied if
+                   condition exists for it to be triggered.*/
                 ldr     r3, [r0, #CONTEXT_OFFSET]
                 mov     sp, r3
-                
-                pop     {r4, r5, r6, r7}
-                mov     r8, r4
-                mov     r9, r5
-                mov     r10, r6
-                mov     r11, r7
-                pop     {r4, r5, r6, r7, pc}
+#else
+                ldr     sp, [r0, #CONTEXT_OFFSET]
+#endif
+
+#if CORTEX_USE_FPU
+                vpop    {s16-s31}
+#endif
+                pop     {r4, r5, r6, r7, r8, r9, r10, r11, pc}
 
 /*--------------------------------------------------------------------------*
  * Start a thread by invoking its work function.
@@ -92,7 +98,12 @@ _port_thread_start:
 #if CH_DBG_STATISTICS
                 bl      _stats_stop_measure_crit_thd
 #endif
+#if CORTEX_SIMPLIFIED_PRIORITY
                 cpsie   i
+#else
+                movs    r3, #0              /* CORTEX_BASEPRI_DISABLED */
+                msr     BASEPRI, r3
+#endif
                 mov     r0, r5
                 blx     r4
                 movs    r0, #0              /* MSG_OK */
@@ -121,21 +132,16 @@ _port_switch_from_isr:
 #endif
                 .globl  _port_exit_from_isr
 _port_exit_from_isr:
-                ldr     r2, .L2
-                ldr     r3, .L3
-                str     r3, [r2, #0]
-#if CORTEX_ALTERNATE_SWITCH
+#if CORTEX_SIMPLIFIED_PRIORITY
+                movw    r3, #:lower16:SCB_ICSR
+                movt    r3, #:upper16:SCB_ICSR
+                mov     r2, ICSR_PENDSVSET
+                str     r2, [r3, #0]
                 cpsie   i
-#endif
+#else /* !CORTEX_SIMPLIFIED_PRIORITY */
+                svc     #0
+#endif /* !CORTEX_SIMPLIFIED_PRIORITY */
 .L1:            b       .L1
-
-                .align  2
-.L2:            .word   SCB_ICSR
-#if CORTEX_ALTERNATE_SWITCH
-.L3:            .word   ICSR_PENDSVSET
-#else
-.L3:            .word   ICSR_NMIPENDSET
-#endif
 
 #endif /* !defined(__DOXYGEN__) */
 

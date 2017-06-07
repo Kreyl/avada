@@ -14,12 +14,12 @@
 #define APP_NAME            "Avada"
 
 // MCU type as defined in the ST header.
-#define STM32F030x8
+#define STM32L151xB
 
 // Freq of external crystal if any. Leave it here even if not used.
-#define CRYSTAL_FREQ_HZ     12000000
+#define CRYSTAL_FREQ_HZ         12000000
 
-#define SYS_TIM_CLK         (Clk.APBFreqHz)
+#define SYS_TIM_CLK             (Clk.APB1FreqHz)
 
 #define SIMPLESENSORS_ENABLED   TRUE
 #define BUTTONS_ENABLED         TRUE
@@ -40,9 +40,10 @@
 #define UART_AF         AF1 // for USART1 @ GPIOA
 
 // Buzzer
-#define BUZZER_PIN      { GPIOB, 9, TIM17, 1, invNotInverted, omPushPull, 45 }
+#define BUZZER_PIN      { GPIOB, 9, TIM11, 1, invNotInverted, omPushPull, 45 }
 
 // LED
+#define LED_PIN         GPIOA, 4
 
 #endif // GPIO
 

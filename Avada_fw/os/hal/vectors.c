@@ -93,7 +93,7 @@ void Vector7C(void) __attribute__((weak, alias("_unhandled_exception")));
 void Vector80(void) __attribute__((weak, alias("_unhandled_exception")));
 void Vector84(void) __attribute__((weak, alias("_unhandled_exception")));
 void Vector88(void) __attribute__((weak, alias("_unhandled_exception")));
-void Vector8C(void);// __attribute__((weak, alias("_unhandled_exception")));
+void Vector8C(void) __attribute__((weak, alias("_unhandled_exception")));
 #endif
 #if CORTEX_NUM_VECTORS > 20
 void Vector90(void) __attribute__((weak, alias("_unhandled_exception")));
