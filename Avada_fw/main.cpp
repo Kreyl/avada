@@ -7,7 +7,8 @@
 #include "board.h"
 #include "buzzer.h"
 
-#define FLASH_DURATION  54
+#define FLASH_DURATION  45
+#define LED_DAC_VALUE   1600    // 1A
 
 // Forever
 EvtMsgQ_t<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
@@ -21,8 +22,7 @@ void FlashCallback(void *p);
 class GreenFlash_t {
 private:
     virtual_timer_t ITmr;
-
-    void LedOn() {}
+    void LedOn() { DAC->DHR12R1 = LED_DAC_VALUE; }
 public:
     void Fire() {
         LedOn();
@@ -31,13 +31,13 @@ public:
     }
     void Restart() { Buzzer.BuzzUp(); }
     bool IsReady() { return Buzzer.IsOnTop(); }
-    void LedOff() {}
+    void LedOff() { DAC->DHR12R1 = 0; }
     void Init() {
-        // Init pin
-//        PinSetupOut()
+        PinSetupAnalog(LED_PIN);
         // Init DAC
-
-
+        rccEnableDAC1(FALSE);
+        DAC->CR = DAC_CR_EN1;
+        DAC->DHR12R1 = 0;
     }
 } GreenFlash;
 
@@ -104,6 +104,13 @@ void OnCmd(Shell_t *PShell) {
     if(PCmd->NameIs("Ping")) PShell->Ack(retvOk);
     else if(PCmd->NameIs("Version")) PShell->Printf("%S %S\r", APP_NAME, BUILD_TIME);
 
+    else if(PCmd->NameIs("V")) {
+        uint16_t v;
+        if(PCmd->GetNext<uint16_t>(&v) == retvOk) {
+            DAC->DHR12R1 = v;
+            PShell->Ack(retvOk);
+        }
+    }
 
     else PShell->Ack(retvCmdUnknown);
 }
