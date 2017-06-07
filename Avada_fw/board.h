@@ -39,6 +39,9 @@
 #define UART_RX_PIN     10
 #define UART_AF         AF1 // for USART1 @ GPIOA
 
+// Buzzer
+#define BUZZER_PIN      { GPIOB, 9, TIM17, 1, invNotInverted, omPushPull, 45 }
+
 // LED
 
 #endif // GPIO
