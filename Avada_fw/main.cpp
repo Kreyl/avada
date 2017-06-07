@@ -1,66 +1,71 @@
-/*
- * File:   main.cpp
- * Author: Kreyl
- * Project: Armlet2South
- *
- * Created on Feb 05, 2013, 20:27
- */
-
-#include "led.h"
-#include "kl_lib_f100.h"
-#include "ch.h"
 #include "hal.h"
+#include "MsgQ.h"
+#include "Sequences.h"
+#include "shell.h"
+#include "SimpleSensors.h"
+#include "buttons.h"
+#include "board.h"
 #include "led.h"
-#include "buzzer.h"
-#include "keys.h"
 
-Led_t Led;
-
-class Flash_t {
-public:
-    void Fire() {
-        Led.Fire();
-        Buzzer.Off();
-    }
-    void Restart() { Buzzer.BuzzUp(); }
-    bool IsReady() { return Buzzer.IsOnTop(); }
-} Flash;
+// Forever
+EvtMsgQ_t<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
+extern CmdUart_t Uart;
+void OnCmd(Shell_t *PShell);
+void ITask();
 
 int main(void) {
-    // ==== Init clock system ====
-    Clk.SetupBusDividers(ahbDiv2, apbDiv1, apbDiv1);
+    // ==== Init Clock system ====
+    Clk.SetupBusDividers(ahbDiv2, apbDiv1);
     Clk.UpdateFreqValues();
 
-    // ==== Init OS ====
+    // === Init OS ===
     halInit();
     chSysInit();
 
-    // ==== Init Hard & Soft ====
-    JtagDisable();
+    // ==== Init hardware ====
+    EvtQMain.Init();
     Uart.Init(115200);
-    Led.Init();
-    Buzzer.Init();
-    Keys.Init(chThdSelf());
+    Printf("\r%S %S\r", APP_NAME, BUILD_TIME);
+    Clk.PrintFreqs();
 
-    Uart.Printf("\rAvada3  AHB=%u; APB1=%u; APB2=%u\r", Clk.AHBFreqHz, Clk.APB1FreqHz, Clk.APB2FreqHz);
-    Flash.Restart();
 
-    // ==== Main cycle ====
-    while(true) {
-        eventmask_t EvtMsk = chEvtWaitAny(ALL_EVENTS);
-        // Keys
-        if(EvtMsk & EVTMSK_KEY_FIRE) {
-            Uart.Printf("KeyFire\r");
-            if(Flash.IsReady()) {
-//                Buzzer.SetVolume(VOLUME_MAX);
-//                chThdSleepMilliseconds(4005);
-//                Buzzer.Off();
-//                chThdSleepMilliseconds(504);
-                Flash.Fire();
-                Flash.Restart();
-            }
-        }
-    } // while
+//    Led.Init();
+//    Led.SetupSeqEndEvt(EVT_LED_DONE);
+
+    SimpleSensors::Init();
+    // Main cycle
+    ITask();
 }
 
+__noreturn
+void ITask() {
+    while(true) {
+        EvtMsg_t Msg = EvtQMain.Fetch(TIME_INFINITE);
+        switch(Msg.ID) {
+            case evtIdShellCmd:
+                OnCmd((Shell_t*)Msg.Ptr);
+                ((Shell_t*)Msg.Ptr)->SignalCmdProcessed();
+                break;
 
+            case evtIdButtons:
+                Printf("Btn\r");
+                break;
+
+            default: break;
+        } // switch
+    } // while true
+}
+
+#if 1 // ======================= Command processing ============================
+void OnCmd(Shell_t *PShell) {
+    Cmd_t *PCmd = &PShell->Cmd;
+//    __unused int32_t dw32 = 0;  // May be unused in some configurations
+//    Uart.Printf("\r%S\r", PCmd->Name);
+    // Handle command
+    if(PCmd->NameIs("Ping")) PShell->Ack(retvOk);
+    else if(PCmd->NameIs("Version")) PShell->Printf("%S %S\r", APP_NAME, BUILD_TIME);
+
+
+    else PShell->Ack(retvCmdUnknown);
+}
+#endif
