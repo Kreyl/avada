@@ -28,6 +28,7 @@ public:
     }
     void BuzzUp();
     void SetVolume(uint16_t AVolume) { IChnl.Set(AVolume); }
+    void On();
     void Off() {
         chVTReset(&ITmr);
         IChnl.Set(0);

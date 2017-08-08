@@ -36,3 +36,8 @@ void Buzz_t::BuzzUp() {
     chVTSet(&ITmr, MS2ST(BUZZ_DELAY_MS), (vtfunc_t)&BuzzTmrCallback, nullptr);
 }
 
+void Buzz_t::On() {
+    IPeriod = 630;
+    IChnl.SetTopValue(IPeriod);
+    IChnl.Set(VOLUME_NORMAL);
+}

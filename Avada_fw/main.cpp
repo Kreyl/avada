@@ -26,11 +26,11 @@ private:
 public:
     void Fire() {
         LedOn();
-        Buzzer.Off();
+//        Buzzer.Off();
         chVTSet(&ITmr, MS2ST(FLASH_DURATION), FlashCallback, nullptr);
     }
-    void Restart() { Buzzer.BuzzUp(); }
-    bool IsReady() { return Buzzer.IsOnTop(); }
+//    void Restart() { Buzzer.BuzzUp(); }
+//    bool IsReady() { return Buzzer.IsOnTop(); }
     void LedOff() { DAC->DHR12R1 = 0; }
     void Init() {
         PinSetupAnalog(LED_PIN);
@@ -63,10 +63,11 @@ int main(void) {
     Clk.PrintFreqs();
 
     Buzzer.Init();
+    Buzzer.On();
     GreenFlash.Init();
 
     SimpleSensors::Init();
-    GreenFlash.Restart();
+//    GreenFlash.Restart();
 
     // Main cycle
     ITask();
@@ -84,10 +85,10 @@ void ITask() {
 
             case evtIdButtons:
                 Printf("Btn\r");
-                if(GreenFlash.IsReady()) {
+//                if(GreenFlash.IsReady()) {
                     GreenFlash.Fire();
-                    GreenFlash.Restart();
-                }
+//                    GreenFlash.Restart();
+//                }
                 break;
 
             default: break;
