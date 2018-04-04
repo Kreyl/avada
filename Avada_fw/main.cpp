@@ -22,7 +22,10 @@ void FlashCallback(void *p);
 class GreenFlash_t {
 private:
     virtual_timer_t ITmr;
-    void LedOn() { DAC->DHR12R1 = LED_DAC_VALUE; }
+    void LedOn() {
+        PinSetLo(LED_PIN);
+//        DAC->DHR12R1 = LED_DAC_VALUE;
+    }
 public:
     void Fire() {
         LedOn();
@@ -31,13 +34,18 @@ public:
     }
     void Restart() { Buzzer.BuzzUp(); }
     bool IsReady() { return Buzzer.IsOnTop(); }
-    void LedOff() { DAC->DHR12R1 = 0; }
+    void LedOff() {
+        PinSetHi(LED_PIN);
+//        DAC->DHR12R1 = 0;
+    }
     void Init() {
-        PinSetupAnalog(LED_PIN);
+        PinSetupOut(LED_PIN, omOpenDrain);
+        PinSetHi(LED_PIN);
+        //PinSetupAnalog(LED_PIN);
         // Init DAC
-        rccEnableDAC1(FALSE);
-        DAC->CR = DAC_CR_EN1;
-        DAC->DHR12R1 = 0;
+//        rccEnableDAC1(FALSE);
+//        DAC->CR = DAC_CR_EN1;
+//        DAC->DHR12R1 = 0;
     }
 } GreenFlash;
 
