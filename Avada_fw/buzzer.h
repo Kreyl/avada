@@ -11,7 +11,7 @@
 // Sound
 #define BUZZ_DELAY_MS       5
 #define PERIOD_MAX          3600    // Lowest frequency
-#define PERIOD_MIN          315     // Highest frequency
+#define PERIOD_MIN          405     // Highest frequency
 // Sound volume
 #define VOLUME_NORMAL       15
 #define VOLUME_MAX          153

@@ -31,7 +31,7 @@
 // PortMinTim_t: GPIO, Pin, Tim, TimChnl, invInverted, omPushPull, TopValue
 
 // Button
-#define BTN_PIN         GPIOA, 4, pudPullUp
+#define BTN_PIN         GPIOA, 0, pudPullDown
 
 // UART
 #define UART_GPIO       GPIOA
@@ -40,7 +40,7 @@
 #define UART_AF         AF1 // for USART1 @ GPIOA
 
 // Buzzer
-#define BUZZER_PIN      { GPIOB, 8, TIM10, 1, invNotInverted, omPushPull, 45 }
+#define BUZZER_PIN      { GPIOB, 9, TIM11, 1, invNotInverted, omPushPull, 45 }
 
 // LED
 #define LED_PIN         GPIOA, 2
