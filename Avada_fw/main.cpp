@@ -67,7 +67,7 @@ int main(void) {
     // ==== Init hardware ====
     EvtQMain.Init();
     Uart.Init(115200);
-    Printf("\r%S %S\r", APP_NAME, BUILD_TIME);
+    Printf("\r%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
     Clk.PrintFreqs();
 
     Buzzer.Init();
@@ -110,7 +110,7 @@ void OnCmd(Shell_t *PShell) {
 //    Uart.Printf("\r%S\r", PCmd->Name);
     // Handle command
     if(PCmd->NameIs("Ping")) PShell->Ack(retvOk);
-    else if(PCmd->NameIs("Version")) PShell->Printf("%S %S\r", APP_NAME, BUILD_TIME);
+    else if(PCmd->NameIs("Version")) PShell->Printf("%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
 
     else if(PCmd->NameIs("V")) {
         uint16_t v;
