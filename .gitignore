@@ -6,3 +6,4 @@ Avada_fw/Debug/
 *.kicad_pcb-bak
 *.ses
 Avada_hw/_saved_avada.sch
+*.bak
