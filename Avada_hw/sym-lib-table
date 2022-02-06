@@ -1,0 +1,3 @@
+(sym_lib_table
+  (lib (name "avada-rescue")(type "Legacy")(uri "${KIPRJMOD}/avada-rescue.lib")(options "")(descr ""))
+)
