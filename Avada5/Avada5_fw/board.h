@@ -34,8 +34,14 @@
 // Buttons
 #define BTN_PIN         GPIOA, 0, pudPullDown
 
+// LEDs
+#define INFO_LED        GPIOB, 14, omPushPull
+
 // Battery measurement
 //#define BAT_MEAS_PIN    GPIOA, 2
+
+// Buzzer
+#define BUZZER_PIN      { GPIOC, 6, TIM3, 1, invNotInverted, omPushPull, 45 }
 
 // UART
 #define UART_GPIO       GPIOA

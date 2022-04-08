@@ -7,6 +7,8 @@
 #include "SimpleSensors.h"
 #include "buttons.h"
 #include "led.h"
+#include "Sequences.h"
+#include "buzzer.h"
 //#include "kl_adc.h"
 
 #if 1 // ======================== Variables and defines ========================
@@ -17,6 +19,48 @@ CmdUart_t Uart{CmdUartParams};
 void OnCmd(Shell_t *PShell);
 void ITask();
 
+LedBlinker_t InfoLed{INFO_LED};
+#endif
+
+#if 1 // ==== Flash ====
+#define FLASH_DURATION  45
+#define LED_DAC_VALUE   1600    // 1A
+
+void FlashCallback(virtual_timer_t *vtp, void *p);
+
+class GreenFlash_t {
+private:
+    virtual_timer_t ITmr;
+    void LedOn() {
+//        PinSetLo(LED_PIN);
+        DAC->DHR12R1 = LED_DAC_VALUE;
+    }
+public:
+    void Fire() {
+        LedOn();
+        Buzzer.Off();
+        chVTSet(&ITmr, TIME_MS2I(FLASH_DURATION), FlashCallback, nullptr);
+    }
+    void Restart() { Buzzer.BuzzUp(); }
+    bool IsReady() { return Buzzer.IsOnTop(); }
+    void LedOff() {
+//        PinSetHi(LED_PIN);
+        DAC->DHR12R1 = 0;
+    }
+    void Init() {
+//        PinSetupOut(LED_PIN, omOpenDrain);
+//        PinSetHi(LED_PIN);
+        PinSetupAnalog(LED_PIN);
+        // Init DAC
+        rccEnableDAC1(FALSE);
+        DAC->CR = DAC_CR_EN1;
+        DAC->DHR12R1 = 0;
+    }
+} GreenFlash;
+
+void FlashCallback(void *p) {
+    GreenFlash.LedOff();
+}
 #endif
 
 int main(void) {
@@ -34,6 +78,9 @@ int main(void) {
     Clk.PrintFreqs();
 
     SimpleSensors::Init();
+    InfoLed.Init();
+    InfoLed.StartOrRestart(lbsqBlink3);
+
 
     // Adc
 //    PinSetupAnalog(LUM_MEAS_PIN);
