@@ -7,3 +7,9 @@ Avada_fw/Debug/
 *.ses
 Avada_hw/_saved_avada.sch
 *.bak
+Avada_hw/avada-backups/
+*.launch
+Avada5/Avada5_fw/.settings/language.settings.xml
+Avada5/Avada5_fw/Debug/
+Avada5/Avada5_fw/Release/
+Avada5/Avada5_hw/Avada5-backups/
