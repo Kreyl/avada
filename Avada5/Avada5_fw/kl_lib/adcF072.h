@@ -44,6 +44,10 @@ struct AdcChannel_t {
 
 struct AdcSetup_t {
     uint32_t SampleTime;
+    enum Oversampling_t : uint32_t {
+            oversmpDis=1, oversmp2=2, oversmp4=4, oversmp8=8, oversmp16=16,
+            oversmp32=32, oversmp64=64, oversmp128=128, oversmp256=256
+        } Oversampling;
     ftVoidVoid DoneCallback;
     std::vector<AdcChannel_t> Channels;
 };
@@ -60,7 +64,7 @@ private:
 public:
     bool Periodic;
     AdcBuf_t& GetBuf() { return *PBufR; }
-    void Init(const AdcSetup_t& Setup);
+    void Init();
     void Deinit();
     void EnableVref();
     void DisableVref();
@@ -74,5 +78,6 @@ public:
 };
 
 extern Adc_t Adc;
+extern const AdcSetup_t AdcSetup;
 
 #endif // ADC_REQUIRED

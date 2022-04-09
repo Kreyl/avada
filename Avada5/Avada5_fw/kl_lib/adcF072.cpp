@@ -41,7 +41,7 @@ void Adc_t::IOnDmaIrq() {
     if(ICallback != nullptr) ICallback();
 }
 
-void Adc_t::Init(const AdcSetup_t& Setup) {
+void Adc_t::Init() {
     rccResetADC1();
     rccEnableADC1(FALSE); // Enable digital clock
     // Configure clock
@@ -49,17 +49,18 @@ void Adc_t::Init(const AdcSetup_t& Setup) {
     ADC1->CFGR2 = (0b00 << 30); // Clock: ADCCLK, will be turned in by ADC itself
     // ==== Setup channels ====
     EnableVref();
-    uint32_t ChnlCnt = Setup.Channels.size();
-    IBuf1.resize(ChnlCnt);
-    IBuf2.resize(ChnlCnt);
+    uint32_t ChnlCnt = AdcSetup.Channels.size();
+    uint32_t BufSz = ChnlCnt * (uint32_t)AdcSetup.Oversampling;
+    IBuf1.resize(BufSz);
+    IBuf2.resize(BufSz);
     ADC1->CHSELR = 0; // Reset it
     for(uint32_t i=0; i<ChnlCnt; i++) {
-        const AdcChannel_t& Chnl = Setup.Channels[i];
+        const AdcChannel_t& Chnl = AdcSetup.Channels[i];
         if(Chnl.GPIO != nullptr) PinSetupAnalog(Chnl.GPIO, Chnl.Pin);
         ADC1->CHSELR |= (1 << Chnl.ChannelN);
     }
-    ADC1->SMPR = (uint32_t)Setup.SampleTime; // Setup sampling time
-    ICallback = Setup.DoneCallback;
+    ADC1->SMPR = (uint32_t)AdcSetup.SampleTime; // Setup sampling time
+    ICallback = AdcSetup.DoneCallback;
     // Calibrate
     uint32_t cnt=0;
     ADC1->CR |= ADC_CR_ADCAL;   // Start calibration
@@ -150,7 +151,7 @@ void Adc_t::StartPeriodicMeasurement(uint32_t FSmpHz) {
     StartConversion();
     // Setup timer
     ITmr.Init();
-    ITmr.SetUpdateFrequencyChangingBoth(FSmpHz);
+    ITmr.SetUpdateFrequencyChangingBoth(FSmpHz * (uint32_t)AdcSetup.Oversampling);
     ITmr.SelectMasterMode(mmUpdate);
     ITmr.Enable();
 }

@@ -62,13 +62,30 @@ void FlashCallback(void *p) { GreenFlash.LedOff(); }
 void OnAdcDoneI() {
 //    PrintfI("CR=0x%X CFGR=0x%X\r", ADC1->CR, ADC1->CFGR1);
     PinToggle(GPIOB, 14);
-//    AdcBuf_t &FBuf = Adc.GetBuf();
-//    PrintfI("%d %d\r", FBuf[0], FBuf[1]);
+    AdcBuf_t &FBuf = Adc.GetBuf();
+    // Calculate averaged value
+    uint32_t N = FBuf.size() / 2; // As 2 channels used
+    uint32_t VRef=0, VRAdc=0;
+    uint16_t *p = FBuf.data();
+    for(uint32_t i=0; i<N; i++) {
+        VRef += *p++;
+        VRAdc += *p++;
+//        PrintfI("%d ", FBuf[i]);
+    }
+    VRef = VRef >> 4;
+    VRAdc = VRAdc >> 4;
+    // Calc current
+//    uint32_t VRmv = Adc.Adc2mV(VRAdc, VRef);
+    uint32_t ILed = (((10 * ADC_VREFINT_CAL_mV * (uint32_t)ADC_VREFINT_CAL) / ADC_MAX_VALUE) * VRAdc) / VRef;
+//    PrintfI("%d", VRmv);
+    PrintfI("%d", ILed);
+//    PrintfI("%d %d", VRef, CurrAdc);
+    PrintfEOL();
 }
 
 const AdcSetup_t AdcSetup = {
         .SampleTime = ast55d5Cycles,
-//        .SampleTime = ast239d5Cycles,
+        .Oversampling = AdcSetup_t::oversmp16,
         .DoneCallback = OnAdcDoneI,
         .Channels = {
                 {LED_CURR_PIN},
@@ -79,12 +96,6 @@ const AdcSetup_t AdcSetup = {
 int main(void) {
     // ==== Init Clock system ====
 //    Clk.SetupBusDividers(ahbDiv2, apbDiv1);
-//    if(Clk.EnableHSI48() == retvOk) {
-//
-//    }
-//    Clk.SelectUSBClock_HSI48();
-//    Clk.SwitchToHsi48();
-//    Clk.SwitchTo(csHSI48);
     Clk.UpdateFreqValues();
 
     // === Init OS ===
@@ -110,8 +121,8 @@ int main(void) {
     GreenFlash.Restart();
 
     // Adc
-    Adc.Init(AdcSetup);
-    Adc.StartPeriodicMeasurement(1000);
+    Adc.Init();
+    Adc.StartPeriodicMeasurement(100);
 
     // Main cycle
     ITask();
