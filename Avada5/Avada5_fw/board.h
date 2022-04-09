@@ -28,6 +28,9 @@
 #define I2C1_ENABLED            FALSE
 #define I2C_USE_SEMAPHORE       FALSE
 
+// ADC timer
+#define ADC_TIM                 TIM1
+
 #if 1 // ========================== GPIO =======================================
 // PortMinTim_t: GPIO, Pin, Tim, TimChnl, invInverted, omPushPull, TopValue
 
@@ -36,12 +39,14 @@
 
 // LEDs
 #define INFO_LED        GPIOB, 14, omPushPull
+#define GREEN_LED       GPIOA, 4
 
-// Battery measurement
+// Measurement
+#define LED_CURR_PIN    GPIOA, 3, 3 // PA3, ADC channel 3
 //#define BAT_MEAS_PIN    GPIOA, 2
 
 // Buzzer
-#define BUZZER_PIN      { GPIOC, 6, TIM3, 1, invNotInverted, omPushPull, 45 }
+#define BUZZER_PIN      GPIOC, 6, TIM3, 1, invNotInverted, omPushPull, 45
 
 // UART
 #define UART_GPIO       GPIOA
@@ -62,24 +67,6 @@
 #define HSI48_CALIBRATN 32
 #endif
 
-#if ADC_REQUIRED // ======================= Inner ADC ==========================
-#define ADC_MEAS_PERIOD_MS  450
-// Clock divider: clock is generated from the APB2
-#define ADC_CLK_DIVIDER     adcDiv2
-
-// ADC channels
-#define ADC_LUM_CHNL        1
-
-#define ADC_VREFINT_CHNL    17  // All 4xx, F072 and L151 devices. Do not change.
-#define ADC_CHANNELS        { ADC_LUM_CHNL, ADC_VREFINT_CHNL }
-#define ADC_CHANNEL_CNT     2   // Do not use countof(AdcChannels) as preprocessor does not know what is countof => cannot check
-#define ADC_SAMPLE_TIME     ast55d5Cycles
-#define ADC_SAMPLE_CNT      8   // How many times to measure every channel
-
-#define ADC_SEQ_LEN         (ADC_SAMPLE_CNT * ADC_CHANNEL_CNT)
-
-#endif
-
 #if 1 // =========================== DMA =======================================
 #define STM32_DMA_REQUIRED  TRUE
 // ==== Uart ====
@@ -97,7 +84,7 @@
 #if ADC_REQUIRED
 #define ADC_DMA         STM32_DMA_STREAM_ID(1, 1)
 #define ADC_DMA_MODE    STM32_DMA_CR_CHSEL(0) |   /* dummy */ \
-                        DMA_PRIORITY_LOW | \
+                        DMA_PRIORITY_HIGH | \
                         STM32_DMA_CR_MSIZE_HWORD | \
                         STM32_DMA_CR_PSIZE_HWORD | \
                         STM32_DMA_CR_MINC |       /* Memory pointer increase */ \
@@ -109,7 +96,7 @@
 
 #if 1 // ========================== USART ======================================
 #define PRINTF_FLOAT_EN FALSE
-#define UART_TXBUF_SZ   1024
+#define UART_TXBUF_SZ   2048
 #define UART_RXBUF_SZ   512
 #define CMD_BUF_SZ      256
 

@@ -1,7 +1,7 @@
 /*
  * buzzer.h
  *
- *  Created on: 25 ÿíâ. 2014 ã.
+ *  Created on: 25 ï¿½ï¿½ï¿½. 2014 ï¿½.
  *      Author: Kreyl
  */
 
@@ -21,9 +21,15 @@ private:
     virtual_timer_t ITmr;
     const PinOutputPWM_t IChnl;
 public:
+    Buzz_t(GPIO_TypeDef *PGpio, uint16_t Pin,
+            TIM_TypeDef *PTimer, uint32_t TimerChnl,
+            Inverted_t Inverted, PinOutMode_t OutputType,
+            uint32_t TopValue) :
+                IChnl(PGpio, Pin, PTimer, TimerChnl, Inverted, OutputType, TopValue), IPeriod(0) {}
     uint16_t IPeriod;
     void Init() {
         IChnl.Init();
+        IChnl.SetTmrClkFreq(4000000); // 4 MHz input freq
         IChnl.Set(0);
     }
     void BuzzUp();

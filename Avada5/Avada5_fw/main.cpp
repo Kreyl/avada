@@ -9,7 +9,7 @@
 #include "led.h"
 #include "Sequences.h"
 #include "buzzer.h"
-//#include "kl_adc.h"
+#include "adcF072.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
@@ -31,26 +31,24 @@ void FlashCallback(virtual_timer_t *vtp, void *p);
 class GreenFlash_t {
 private:
     virtual_timer_t ITmr;
-    void LedOn() {
-//        PinSetLo(LED_PIN);
-        DAC->DHR12R1 = LED_DAC_VALUE;
-    }
 public:
+    void LedOn() { DAC->DHR12R1 = LED_DAC_VALUE; }
+    void LedOn(uint16_t v) { DAC->DHR12R1 = v; }
     void Fire() {
         LedOn();
         Buzzer.Off();
         chVTSet(&ITmr, TIME_MS2I(FLASH_DURATION), FlashCallback, nullptr);
     }
-    void Restart() { Buzzer.BuzzUp(); }
+    void Restart() {
+//        Buzzer.BuzzUp();
+    }
     bool IsReady() { return Buzzer.IsOnTop(); }
     void LedOff() {
 //        PinSetHi(LED_PIN);
         DAC->DHR12R1 = 0;
     }
     void Init() {
-//        PinSetupOut(LED_PIN, omOpenDrain);
-//        PinSetHi(LED_PIN);
-        PinSetupAnalog(LED_PIN);
+        PinSetupAnalog(GREEN_LED);
         // Init DAC
         rccEnableDAC1(FALSE);
         DAC->CR = DAC_CR_EN1;
@@ -58,18 +56,43 @@ public:
     }
 } GreenFlash;
 
-void FlashCallback(void *p) {
-    GreenFlash.LedOff();
-}
+void FlashCallback(void *p) { GreenFlash.LedOff(); }
 #endif
+
+void OnAdcDoneI() {
+//    PrintfI("CR=0x%X CFGR=0x%X\r", ADC1->CR, ADC1->CFGR1);
+    PinToggle(GPIOB, 14);
+//    AdcBuf_t &FBuf = Adc.GetBuf();
+//    PrintfI("%d %d\r", FBuf[0], FBuf[1]);
+}
+
+const AdcSetup_t AdcSetup = {
+        .SampleTime = ast55d5Cycles,
+//        .SampleTime = ast239d5Cycles,
+        .DoneCallback = OnAdcDoneI,
+        .Channels = {
+                {LED_CURR_PIN},
+                {nullptr, 0, ADC_VREFINT_CHNL}
+        }
+};
 
 int main(void) {
     // ==== Init Clock system ====
+//    Clk.SetupBusDividers(ahbDiv2, apbDiv1);
+//    if(Clk.EnableHSI48() == retvOk) {
+//
+//    }
+//    Clk.SelectUSBClock_HSI48();
+//    Clk.SwitchToHsi48();
+//    Clk.SwitchTo(csHSI48);
     Clk.UpdateFreqValues();
 
     // === Init OS ===
     halInit();
     chSysInit();
+
+//    Clk.SwitchToHsi48();
+//    Clk.UpdateFreqValues();
 
     // ==== Init hardware ====
     EvtQMain.Init();
@@ -78,14 +101,17 @@ int main(void) {
     Clk.PrintFreqs();
 
     SimpleSensors::Init();
-    InfoLed.Init();
-    InfoLed.StartOrRestart(lbsqBlink3);
+//    InfoLed.Init();
+//    InfoLed.StartOrRestart(lbsqBlink3);
+    PinSetupOut(GPIOB, 14, omPushPull);
 
+    Buzzer.Init();
+    GreenFlash.Init();
+    GreenFlash.Restart();
 
     // Adc
-//    PinSetupAnalog(LUM_MEAS_PIN);
-//    Adc.Init();
-//    Adc.EnableVRef();
+    Adc.Init(AdcSetup);
+    Adc.StartPeriodicMeasurement(1000);
 
     // Main cycle
     ITask();
@@ -125,6 +151,20 @@ void OnCmd(Shell_t *PShell) {
 //    Printf("%S\r", PCmd->Name);
     // Handle command
     if(PCmd->NameIs("Ping")) PShell->Ok();
+
+    else if(PCmd->NameIs("On")) {
+        uint16_t v;
+        if(PCmd->GetNext<uint16_t>(&v) == retvOk) GreenFlash.LedOn(v);
+        PShell->Ok();
+    }
+    else if(PCmd->NameIs("Off")) {
+        GreenFlash.LedOff();
+        PShell->Ok();
+    }
+
+    else if(PCmd->NameIs("adc")) {
+        Printf("  CR=0x%X CFGR=0x%X ISR=0x%X\r", ADC1->CR, ADC1->CFGR1, ADC1->ISR);
+    }
 
     else PShell->CmdUnknown();
 }

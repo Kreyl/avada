@@ -363,7 +363,10 @@ void PinOutputPWM_t::Init() const {
     PinSetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType, pudNone, AF);
 #elif defined STM32F0XX
     if     (ITmr == TIM1)  PinSetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType, pudNone, AF2);
-    else if(ITmr == TIM3)  PinSetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType, pudNone, AF1);
+    else if(ITmr == TIM3) {
+        if(ISetup.PGpio == GPIOA or ISetup.PGpio == GPIOB) PinSetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType, pudNone, AF1);
+        else PinSetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType, pudNone, AF0);
+    }
     else if(ITmr == TIM14) {
         if(ISetup.PGpio == GPIOA) PinSetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType, pudNone, AF4);
         else PinSetupAlterFunc(ISetup.PGpio, ISetup.Pin, ISetup.OutputType, pudNone, AF0);
@@ -439,6 +442,12 @@ void Timer_t::SetUpdateFrequencyChangingBoth(uint32_t FreqHz) const {
     uint32_t Psc = (Clk.GetTimInputFreq(ITmr) / FreqHz) / 0x10000;
     ITmr->PSC = Psc;
     SetUpdateFrequencyChangingTopValue(FreqHz);
+}
+
+void Timer_t::SetTmrClkFreq(uint32_t FreqHz) const {
+    uint32_t Psc = Clk.GetTimInputFreq(ITmr) / FreqHz;
+    if(Psc != 0) Psc--;
+    ITmr->PSC = Psc;
 }
 #endif
 
