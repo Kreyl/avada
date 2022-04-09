@@ -23,30 +23,19 @@ LedBlinker_t InfoLed{INFO_LED};
 #endif
 
 #if 1 // ==== Flash ====
-#define FLASH_DURATION  45
-#define LED_DAC_VALUE   1600    // 1A
+#define FLASH_DURATION  207U
+#define LED_DAC_START   2700U    // ?? A
+#define ILED_TARGET_mA  1500U
+#define DAC_ADJ_STEP    45U
 
 void FlashCallback(virtual_timer_t *vtp, void *p);
 
 class GreenFlash_t {
 private:
     virtual_timer_t ITmr;
+    uint16_t DacValue;
+    bool IsOn = false;
 public:
-    void LedOn() { DAC->DHR12R1 = LED_DAC_VALUE; }
-    void LedOn(uint16_t v) { DAC->DHR12R1 = v; }
-    void Fire() {
-        LedOn();
-        Buzzer.Off();
-        chVTSet(&ITmr, TIME_MS2I(FLASH_DURATION), FlashCallback, nullptr);
-    }
-    void Restart() {
-//        Buzzer.BuzzUp();
-    }
-    bool IsReady() { return Buzzer.IsOnTop(); }
-    void LedOff() {
-//        PinSetHi(LED_PIN);
-        DAC->DHR12R1 = 0;
-    }
     void Init() {
         PinSetupAnalog(GREEN_LED);
         // Init DAC
@@ -54,14 +43,45 @@ public:
         DAC->CR = DAC_CR_EN1;
         DAC->DHR12R1 = 0;
     }
+
+    void SetDac(uint16_t v) { DAC->DHR12R1 = v; }
+
+    void Fire() {
+        DacValue = LED_DAC_START;
+        Adc.StartPeriodicMeasurement(1000);
+        SetDac(DacValue);
+        IsOn = true;
+//        Buzzer.Off();
+        chVTSet(&ITmr, TIME_MS2I(FLASH_DURATION), FlashCallback, nullptr);
+    }
+
+    void Stop() {
+        IsOn = false;
+        SetDac(0);
+        Adc.Stop();
+    }
+
+    void Restart() {
+//        Buzzer.BuzzUp();
+    }
+    bool IsReady() { return Buzzer.IsOnTop(); }
+
+    void AdjustCurrent(uint32_t ILed) {
+        if(IsOn) {
+            if(ILed > ILED_TARGET_mA and DacValue >= DAC_ADJ_STEP) DacValue -= DAC_ADJ_STEP;
+            else if(DacValue < (4095U - DAC_ADJ_STEP)) DacValue += DAC_ADJ_STEP;
+            SetDac(DacValue);
+            PrintfI("I=%u D=%u\r", ILed, DacValue);
+        }
+    }
 } GreenFlash;
 
-void FlashCallback(void *p) { GreenFlash.LedOff(); }
+void FlashCallback(virtual_timer_t *vtp, void *p) { GreenFlash.Stop(); }
 #endif
 
 void OnAdcDoneI() {
 //    PrintfI("CR=0x%X CFGR=0x%X\r", ADC1->CR, ADC1->CFGR1);
-    PinToggle(GPIOB, 14);
+//    PinToggle(GPIOB, 14);
     AdcBuf_t &FBuf = Adc.GetBuf();
     // Calculate averaged value
     uint32_t N = FBuf.size() / 2; // As 2 channels used
@@ -70,17 +90,15 @@ void OnAdcDoneI() {
     for(uint32_t i=0; i<N; i++) {
         VRef += *p++;
         VRAdc += *p++;
-//        PrintfI("%d ", FBuf[i]);
     }
     VRef = VRef >> 4;
     VRAdc = VRAdc >> 4;
     // Calc current
-//    uint32_t VRmv = Adc.Adc2mV(VRAdc, VRef);
     uint32_t ILed = (((10 * ADC_VREFINT_CAL_mV * (uint32_t)ADC_VREFINT_CAL) / ADC_MAX_VALUE) * VRAdc) / VRef;
-//    PrintfI("%d", VRmv);
-    PrintfI("%d", ILed);
-//    PrintfI("%d %d", VRef, CurrAdc);
-    PrintfEOL();
+//    PrintfI("%u\r", ILed);
+//    PrintfI("%u %u\r", VRef, VRAdc);
+    GreenFlash.AdjustCurrent(ILed);
+    PinSetLo(GPIOB, 14);
 }
 
 const AdcSetup_t AdcSetup = {
@@ -122,7 +140,7 @@ int main(void) {
 
     // Adc
     Adc.Init();
-    Adc.StartPeriodicMeasurement(100);
+//    Adc.StartPeriodicMeasurement(100);
 
     // Main cycle
     ITask();
@@ -164,18 +182,18 @@ void OnCmd(Shell_t *PShell) {
     if(PCmd->NameIs("Ping")) PShell->Ok();
 
     else if(PCmd->NameIs("On")) {
-        uint16_t v;
-        if(PCmd->GetNext<uint16_t>(&v) == retvOk) GreenFlash.LedOn(v);
+        GreenFlash.Fire();
+//        uint16_t v;
+//        if(PCmd->GetNext<uint16_t>(&v) == retvOk) Adc.StartPeriodicMeasurement(v);
+            //GreenFlash.LedOn(v);
         PShell->Ok();
     }
     else if(PCmd->NameIs("Off")) {
-        GreenFlash.LedOff();
+//        GreenFlash.LedOff();
+//        Adc.Stop();
         PShell->Ok();
     }
 
-    else if(PCmd->NameIs("adc")) {
-        Printf("  CR=0x%X CFGR=0x%X ISR=0x%X\r", ADC1->CR, ADC1->CFGR1, ADC1->ISR);
-    }
 
     else PShell->CmdUnknown();
 }

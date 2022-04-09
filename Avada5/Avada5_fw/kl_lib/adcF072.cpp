@@ -20,6 +20,7 @@ static const Timer_t ITmr(ADC_TIM);
 // Wrapper for IRQ
 extern "C"
 void AdcRdyIrq(void *p, uint32_t flags) {
+    PinSetHi(GPIOB, 14);
     chSysLockFromISR();
     Adc.IOnDmaIrq();
     chSysUnlockFromISR();
@@ -92,7 +93,8 @@ static void Calibrate() {
     for(volatile uint32_t i=0; i<99; i++) __NOP();
 }
 
-static void StopAndDisable() {
+void Adc_t:: Stop() {
+    dmaStreamDisable(PDma);
     if(IsEnabled()) {
         SET_BIT(ADC1->CR, ADC_CR_ADSTP);    // Stop any ongoing conversion
         while(READ_BIT(ADC1->CR, ADC_CR_ADSTP) != 0);   // Let it to complete
@@ -102,7 +104,7 @@ static void StopAndDisable() {
 }
 
 void Adc_t::Deinit() {
-    StopAndDisable();
+    Stop();
 #ifdef ADC_TIM
     ITmr.Deinit();
 #endif
@@ -115,7 +117,7 @@ void Adc_t::DisableVref() { ADC1_COMMON->CCR &= ADC_CCR_VREFEN; }
 
 // Service routine
 void Adc_t::DisableCalibrateEnableSetDMA() {
-    StopAndDisable();
+    Stop();
     Calibrate();
     // Enable
     SET_BIT(ADC1->ISR, ADC_ISR_ADRDY);  // Clear ADRDY bit by writing 1 to it

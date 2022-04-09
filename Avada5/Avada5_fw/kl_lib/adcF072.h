@@ -71,6 +71,7 @@ public:
     void StartSingleMeasurement();
     void StartPeriodicMeasurement(uint32_t FSmpHz);
     void StartContinuosMeasurement();
+    void Stop();
     uint32_t Adc2mV(uint32_t AdcChValue, uint32_t VrefValue);
 //    uint32_t GetResult(uint8_t AChannel);
     // Inner use
