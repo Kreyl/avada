@@ -562,14 +562,14 @@ static uint8_t GetStatus(void) {
     else return retvOk;
 }
 
-static uint8_t WaitForLastOperation(systime_t Timeout_st) {
+uint8_t WaitForLastOperation(systime_t Timeout_st) {
     uint8_t status = retvOk;
     // Wait for a Flash operation to complete or a TIMEOUT to occur
+    systime_t Start = chVTGetSystemTimeX();
     do {
         status = GetStatus();
-        Timeout_st--;
-    } while((status == retvBusy) and (Timeout_st != 0x00));
-    if(Timeout_st == 0x00) status = retvTimeout;
+        if(chVTTimeElapsedSinceX(Start) >= Timeout_st) return retvTimeout;
+    } while(status == retvBusy);
     return status;
 }
 #endif
@@ -590,6 +590,8 @@ static void LockEEAndPECR() { FLASH->PECR |= FLASH_PECR_PELOCK; }
 #endif // L151
 
 // ==== Flash ====
+bool IsLocked() { return (bool)(FLASH->CR & FLASH_CR_LOCK); }
+
 void UnlockFlash() {
 #if defined STM32L1XX
     UnlockEEAndPECR();
@@ -609,7 +611,7 @@ void LockFlash() {
 #endif
 }
 
-// Beware: use Page Address (0...255), not absolute address kind of 0x08003f00
+// Beware: for L4xx, use Page Address (0...255), not absolute address kind of 0x08003f00. For Fxx, absolute addr is required.
 uint8_t ErasePage(uint32_t PageAddress) {
     uint8_t status = WaitForLastOperation(FLASH_EraseTimeout);
     if(status == retvOk) {
@@ -643,10 +645,11 @@ uint8_t ErasePage(uint32_t PageAddress) {
         FLASH->CR |= FLASH_CR_PER;
         FLASH->AR = PageAddress;
         FLASH->CR |= FLASH_CR_STRT;
+        __NOP(); // The software should start checking if the BSY bit equals “0” at least one CPU cycle after setting the STRT bit.
         // Wait for last operation to be completed
         status = WaitForLastOperation(FLASH_EraseTimeout);
         // Disable the PER Bit
-        FLASH->CR &= 0x00001FFD;
+        FLASH->CR &= ~FLASH_CR_PER;
 #endif
     }
     return status;
@@ -693,17 +696,17 @@ uint8_t ProgramWord(uint32_t Address, uint32_t Data) {
         *((volatile uint32_t*)Address) = Data;
         status = WaitForLastOperation(FLASH_ProgramTimeout);
 #else
-        FLASH->CR |= 0x00000001; // FLASH_CR_PG_Set
+        FLASH->CR |= FLASH_CR_PG;
         // Program the new first half word
         *(volatile uint16_t*)Address = (uint16_t)Data;
         status = WaitForLastOperation(FLASH_ProgramTimeout);
         if(status == retvOk) {
             // Program the new second half word
-            uint32_t tmp = Address + 2;
-            *(volatile uint16_t*)tmp = Data >> 16;
+            Address += 2;
+            *(volatile uint16_t*)Address = Data >> 16;
             status = WaitForLastOperation(FLASH_ProgramTimeout);
         }
-        FLASH->CR &= 0x00001FFE;  // FLASH_CR_PG_Reset Disable the PG Bit
+        FLASH->CR &= ~FLASH_CR_PG;
 #endif
     }
     return status;

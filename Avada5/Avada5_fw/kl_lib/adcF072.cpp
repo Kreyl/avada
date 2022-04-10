@@ -20,7 +20,6 @@ static const Timer_t ITmr(ADC_TIM);
 // Wrapper for IRQ
 extern "C"
 void AdcRdyIrq(void *p, uint32_t flags) {
-    PinSetHi(GPIOB, 14);
     chSysLockFromISR();
     Adc.IOnDmaIrq();
     chSysUnlockFromISR();
@@ -80,7 +79,6 @@ void Adc_t::Init() {
     dmaStreamSetMode      (PDma, ADC_DMA_MODE);
     // en DMA request, DMA is in circ mode
     ADC1->CFGR1 = ADC_CFGR1_DMACFG | ADC_CFGR1_DMAEN;
-//    ADC1->CFGR1 = ADC_CFGR1_DMAEN;
 }
 
 static bool IsEnabled() { return (ADC1->CR & ADC_CR_ADEN); }
@@ -165,28 +163,9 @@ void Adc_t::StartContinuosMeasurement() {
     // Enable continuous mode
     ADC1->CFGR1 |= ADC_CFGR1_CONT;
     StartConversion();
-//    PinSetHi(GPIOB, 14)
-//    Printf("  CR=0x%X CFGR=0x%X\r", ADC1->CR, ADC1->CFGR1);
 }
-
-
-//uint32_t Adc_t::GetResult(uint8_t AChannel) {
-//    Uart.Printf("SQR1: %X; SQR2: %X; ISR: %X\r", ADC1->SQR1, ADC1->SQR2, ADC1->ISR);
-//    for(int i=0; i<ADC_SEQ_LEN; i++) Uart.Printf("%u ", IBuf[i]);
-//    Uart.Printf("\r");
-//#if (ADC_CHANNEL_CNT > 1)
-    // Find Channel indx
-//    for(uint32_t i=0; i < ADC_CHANNEL_CNT; i++) {
-//        if(AdcChannels[i] == AChannel) return IBuf[i];
-//    }
-//#endif
-//    return IBuf[0];
-//}
-
-
 
 uint32_t Adc_t::Adc2mV(uint32_t AdcChValue, uint32_t VrefValue) {
     return ((ADC_VREFINT_CAL_mV * (uint32_t)ADC_VREFINT_CAL / ADC_MAX_VALUE) * AdcChValue) / VrefValue;
 }
-
 #endif  // ADC_REQUIRED

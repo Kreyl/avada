@@ -15,4 +15,13 @@ enum EvtMsgId_t {
     evtIdEverySecond,
 
     evtIdButtons,
+
+    // Usb
+    evtIdUsbConnect,
+    evtIdUsbDisconnect,
+    evtIdUsbReady,
+    evtIdUsbNewCmd,
+    evtIdUsbInDone,
+    evtIdUsbOutDone,
+
 };

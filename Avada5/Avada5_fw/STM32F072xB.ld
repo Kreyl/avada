@@ -23,7 +23,7 @@ __process_stack_size__  = 0x0400;
  */
 MEMORY
 {
-    flash0  : org = 0x08000000, len = 128k
+    flash0  : org = 0x08000000, len = 64k /* Top 64k is utilized as MSD Flash Storage */ 
     flash1  : org = 0x00000000, len = 0
     flash2  : org = 0x00000000, len = 0
     flash3  : org = 0x00000000, len = 0

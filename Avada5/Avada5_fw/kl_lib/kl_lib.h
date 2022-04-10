@@ -1510,12 +1510,13 @@ public:
 // =========================== Flash and Option bytes ==========================
 namespace Flash {
 
+bool IsLocked();
 void UnlockFlash();
 void LockFlash();
 void UnlockOptionBytes();
 void LockOptionBytes();
 
-
+uint8_t WaitForLastOperation(systime_t Timeout_st);
 void ClearPendingFlags();
 uint8_t ErasePage(uint32_t PageAddress);
 

@@ -10,6 +10,7 @@
 #include "Sequences.h"
 #include "buzzer.h"
 #include "adcF072.h"
+#include "usb_msd.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
@@ -20,6 +21,9 @@ void OnCmd(Shell_t *PShell);
 void ITask();
 
 LedBlinker_t InfoLed{INFO_LED};
+// ==== USB & FileSys ====
+//FATFS FlashFS;
+bool UsbIsConnected = false;
 #endif
 
 #if 1 // ==== Flash ====
@@ -65,7 +69,7 @@ public:
     }
 
     void Restart() {
-        Buzzer.BuzzUp();
+//        Buzzer.BuzzUp();
     }
     bool IsReady() { return Buzzer.IsOnTop(); }
 
@@ -75,7 +79,7 @@ public:
             else if(DacValue < (4095U - DAC_ADJ_STEP)) DacValue += DAC_ADJ_STEP;
             SetDac(DacValue);
             if(ILed > IMax) IMax = ILed;
-//            PrintfI("%u %u %u\r", Cnt++, ILed, DacValue);
+//            PrintfI("%u %u\r", ILed, DacValue);
         }
     }
 } GreenFlash;
@@ -83,9 +87,8 @@ public:
 void FlashCallback(virtual_timer_t *vtp, void *p) { GreenFlash.Stop(); }
 #endif
 
+#if 1 // ==== ADC ====
 void OnAdcDoneI() {
-//    PrintfI("CR=0x%X CFGR=0x%X\r", ADC1->CR, ADC1->CFGR1);
-//    PinToggle(GPIOB, 14);
     AdcBuf_t &FBuf = Adc.GetBuf();
     // Calculate averaged value
     uint32_t N = FBuf.size() / 2; // As 2 channels used
@@ -100,7 +103,6 @@ void OnAdcDoneI() {
     // Calc current
     uint32_t ILed = (((10 * ADC_VREFINT_CAL_mV * (uint32_t)ADC_VREFINT_CAL) / ADC_MAX_VALUE) * VRAdc) / VRef;
     GreenFlash.AdjustCurrent(ILed);
-    PinSetLo(GPIOB, 14);
 }
 
 const AdcSetup_t AdcSetup = {
@@ -112,10 +114,13 @@ const AdcSetup_t AdcSetup = {
                 {nullptr, 0, ADC_VREFINT_CHNL}
         }
 };
+#endif
 
 int main(void) {
     // ==== Init Clock system ====
-//    Clk.SetupBusDividers(ahbDiv2, apbDiv1);
+    Clk.EnablePrefetch();
+//    Clk.SetupFlashLatency(48000000);
+//    Clk.SwitchTo(csHSI48);
     Clk.UpdateFreqValues();
 
     // === Init OS ===
@@ -131,18 +136,16 @@ int main(void) {
     Printf("\r%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
     Clk.PrintFreqs();
 
-    SimpleSensors::Init();
-//    InfoLed.Init();
-//    InfoLed.StartOrRestart(lbsqBlink3);
-    PinSetupOut(GPIOB, 14, omPushPull);
+    InfoLed.Init();
+    InfoLed.StartOrRestart(lbsqBlink3);
 
     Buzzer.Init();
+    Adc.Init();
     GreenFlash.Init();
     GreenFlash.Restart();
 
-    // Adc
-    Adc.Init();
-//    Adc.StartPeriodicMeasurement(100);
+    UsbMsd.Init();
+    SimpleSensors::Init();
 
     // Main cycle
     ITask();
@@ -169,9 +172,59 @@ void ITask() {
                 }
                 break;
 
+#if 1       // ======= USB =======
+            case evtIdUsbConnect:
+                Printf("USB connect\r");
+                // Enable HSI48
+                chSysLock();
+                Clk.SetupFlashLatency(48000000);
+                while(Clk.SwitchTo(csHSI48) != retvOk) {
+                    PrintfI("Hsi48 Fail\r");
+                    chThdSleepS(TIME_MS2I(207));
+                }
+                Clk.UpdateFreqValues();
+                chSysUnlock();
+                Clk.PrintFreqs();
+                Clk.SelectUSBClock_HSI48();
+                Clk.EnableCRS();
+                UsbMsd.Connect();
+                break;
+
+            case evtIdUsbDisconnect: {
+                UsbMsd.Disconnect();
+                chSysLock();
+                uint8_t r = Clk.SwitchTo(csHSI);
+                Clk.UpdateFreqValues();
+                chSysUnlock();
+                Clk.PrintFreqs();
+                if(r == retvOk) {
+                    Clk.DisableCRS();
+                    Clk.DisableHSI48();
+                    Clk.SetupFlashLatency(8000000);
+                }
+                else Printf("Hsi Fail\r");
+                Printf("USB disconnect\r");
+            } break;
+
+            case evtIdUsbReady:
+                Printf("USB ready\r");
+                break;
+#endif
+
             default: break;
         } // switch
     } // while true
+}
+
+void ProcessUsbDetect(PinSnsState_t *PState, uint32_t Len) {
+    if((*PState == pssRising or *PState == pssHi) and !UsbIsConnected) {
+        UsbIsConnected = true;
+        EvtQMain.SendNowOrExit(EvtMsg_t(evtIdUsbConnect));
+    }
+    else if((*PState == pssFalling or *PState == pssLo) and UsbIsConnected) {
+        UsbIsConnected = false;
+        EvtQMain.SendNowOrExit(EvtMsg_t(evtIdUsbDisconnect));
+    }
 }
 
 void OnCmd(Shell_t *PShell) {

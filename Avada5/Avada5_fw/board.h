@@ -43,7 +43,6 @@
 
 // Measurement
 #define LED_CURR_PIN    GPIOA, 3, 3 // PA3, ADC channel 3
-//#define BAT_MEAS_PIN    GPIOA, 2
 
 // Buzzer
 #define BUZZER_PIN      GPIOC, 6, TIM3, 1, invNotInverted, omPushPull, 45
@@ -52,6 +51,11 @@
 #define UART_GPIO       GPIOA
 #define UART_TX_PIN     9
 #define UART_RX_PIN     10
+
+// USB
+#define USB_DETECT_PIN  GPIOC, 13
+#define USB_DM          GPIOA, 11
+#define USB_DP          GPIOA, 12
 
 #endif // GPIO
 
