@@ -13,7 +13,6 @@ enum EvtMsgId_t {
     // Pretending to eternity
     evtIdShellCmdRcvd,
     evtIdEverySecond,
-    evtIdAdcRslt,
 
     evtIdButtons,
 };
