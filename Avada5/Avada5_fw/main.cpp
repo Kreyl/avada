@@ -13,6 +13,7 @@
 #include "usb_msd.h"
 #include "Settings.h"
 #include "GreenFlash.h"
+#include "kl_fs_utils.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
@@ -23,12 +24,10 @@ void OnCmd(Shell_t *PShell);
 void ITask();
 
 LedBlinker_t InfoLed{INFO_LED};
-// ==== USB & FileSys ====
-//FATFS FlashFS;
+FATFS FlashFS;
 bool UsbIsConnected = false;
-#endif
-
 Settings_t Settings;
+#endif
 
 #if 1 // ==== ADC ====
 void OnAdcDoneI() {
@@ -80,7 +79,13 @@ int main(void) {
     Clk.PrintFreqs();
 
     InfoLed.Init();
-    InfoLed.StartOrRestart(lbsqBlink3);
+
+    // Init filesystem
+    if(f_mount(&FlashFS, "", 0) == FR_OK) {
+        if(Settings.Load() == retvOk) InfoLed.StartOrRestart(lbsqOk);
+        else InfoLed.StartOrRestart(lbsqBlink3);
+    }
+    else Printf("FS error\r");
 
     Buzzer.Init();
     Adc.Init();

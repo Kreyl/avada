@@ -108,6 +108,8 @@
                                     <listOptionValue builtIn="false" value="../os/stm32f072"/>
                                     									
                                     <listOptionValue builtIn="false" value="../usb"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="../Filesys"/>
                                     								
                                 </option>
                                 								
@@ -150,6 +152,8 @@
                                     <listOptionValue builtIn="false" value="../os/stm32f072"/>
                                     									
                                     <listOptionValue builtIn="false" value="../usb"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="../Filesys"/>
                                     								
                                 </option>
                                 								
@@ -340,6 +344,8 @@
                                     <listOptionValue builtIn="false" value="../os/stm32f072"/>
                                     									
                                     <listOptionValue builtIn="false" value="../usb"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="../Filesys"/>
                                     								
                                 </option>
                                 								
@@ -386,6 +392,8 @@
                                     <listOptionValue builtIn="false" value="../os/stm32f072"/>
                                     									
                                     <listOptionValue builtIn="false" value="../usb"/>
+                                    									
+                                    <listOptionValue builtIn="false" value="../Filesys"/>
                                     								
                                 </option>
                                 								

@@ -46,7 +46,7 @@ void Buzz_t::BuzzUp() {
     N=0;
     Delay_st = TIME_MS2I(DurationTbl[Settings.Delay.Start2Ready.Value]);
     IChnl.SetTopValue(IPeriod);
-    IChnl.Set(Settings.SoundVolumeStart.Value * 2);
+    IChnl.Set(Settings.SoundVolumeCharging.Value * 2);
     chVTSet(&ITmr, Delay_st, (vtfunc_t)&BuzzTmrCallback, nullptr);
 }
 

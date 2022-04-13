@@ -235,6 +235,12 @@ const LedRGBChunk_t lsqFailure[] = {
 
 #if 1 // ======================== Simple LED blink =============================
 #define BLINK_DELAY_MS      180
+const BaseChunk_t lbsqOk[] = {
+        {csSetup, 1},
+        {csWait, 720},
+        {csSetup, 0},
+        {csEnd}
+};
 const BaseChunk_t lbsqBlink3[] = {
         {csSetup, 1},
         {csWait, BLINK_DELAY_MS},
