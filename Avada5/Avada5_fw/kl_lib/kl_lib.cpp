@@ -328,6 +328,7 @@ void PinOutputPWM_t::Init() const {
 #if !defined STM32L151xB
     ITmr->BDTR = 0xC000;   // Main output Enable
 #endif
+    ITmr->CR1 |= TIM_CR1_ARPE;
     ITmr->ARR = ISetup.TopValue;
     // Setup Output
     uint16_t tmp = (ISetup.Inverted == invInverted)? 0b111 : 0b110; // PWM mode 1 or 2

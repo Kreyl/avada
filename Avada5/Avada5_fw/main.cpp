@@ -11,6 +11,8 @@
 #include "buzzer.h"
 #include "adcF072.h"
 #include "usb_msd.h"
+#include "Settings.h"
+#include "GreenFlash.h"
 
 #if 1 // ======================== Variables and defines ========================
 // Forever
@@ -26,66 +28,7 @@ LedBlinker_t InfoLed{INFO_LED};
 bool UsbIsConnected = false;
 #endif
 
-#if 1 // ==== Flash ====
-#define FLASH_DURATION  207U
-#define LED_DAC_START   1800U    // ?? A
-#define ILED_TARGET_mA  1500U
-#define DAC_ADJ_STEP    45U
-
-void FlashCallback(virtual_timer_t *vtp, void *p);
-
-class GreenFlash_t {
-private:
-    virtual_timer_t ITmr;
-    uint16_t DacValue;
-    bool IsOn = false;
-    uint32_t IMax;
-public:
-    void Init() {
-        PinSetupAnalog(GREEN_LED);
-        // Init DAC
-        rccEnableDAC1(FALSE);
-        DAC->CR = DAC_CR_EN1;
-        DAC->DHR12R1 = 0;
-    }
-
-    void SetDac(uint16_t v) { DAC->DHR12R1 = v; }
-
-    void Fire() {
-        IMax=0;
-        DacValue = LED_DAC_START;
-        Adc.StartPeriodicMeasurement(2000);
-        SetDac(DacValue);
-        IsOn = true;
-        Buzzer.Off();
-        chVTSet(&ITmr, TIME_MS2I(FLASH_DURATION), FlashCallback, nullptr);
-    }
-
-    void Stop() {
-        IsOn = false;
-        SetDac(0);
-        Adc.Stop();
-        PrintfI("IMax: %u\r", IMax);
-    }
-
-    void Restart() {
-//        Buzzer.BuzzUp();
-    }
-    bool IsReady() { return Buzzer.IsOnTop(); }
-
-    void AdjustCurrent(uint32_t ILed) {
-        if(IsOn) {
-            if(ILed > ILED_TARGET_mA and DacValue >= DAC_ADJ_STEP) DacValue -= DAC_ADJ_STEP;
-            else if(DacValue < (4095U - DAC_ADJ_STEP)) DacValue += DAC_ADJ_STEP;
-            SetDac(DacValue);
-            if(ILed > IMax) IMax = ILed;
-//            PrintfI("%u %u\r", ILed, DacValue);
-        }
-    }
-} GreenFlash;
-
-void FlashCallback(virtual_timer_t *vtp, void *p) { GreenFlash.Stop(); }
-#endif
+Settings_t Settings;
 
 #if 1 // ==== ADC ====
 void OnAdcDoneI() {
@@ -166,10 +109,7 @@ void ITask() {
 
             case evtIdButtons:
                 Printf("Btn\r");
-                if(GreenFlash.IsReady()) {
-                    GreenFlash.Fire();
-                    GreenFlash.Restart();
-                }
+                GreenFlash.OnBtnPress();
                 break;
 
 #if 1       // ======= USB =======
@@ -233,10 +173,10 @@ void OnCmd(Shell_t *PShell) {
     // Handle command
     if(PCmd->NameIs("Ping")) PShell->Ok();
 
-    else if(PCmd->NameIs("On")) {
-        GreenFlash.Fire();
-        PShell->Ok();
-    }
+//    else if(PCmd->NameIs("On")) {
+//        GreenFlash.Fire();
+//        PShell->Ok();
+//    }
     else if(PCmd->NameIs("Off")) {
 //        GreenFlash.LedOff();
 //        Adc.Stop();

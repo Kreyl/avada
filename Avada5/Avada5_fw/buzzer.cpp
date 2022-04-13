@@ -7,32 +7,46 @@
 
 #include "buzzer.h"
 #include "board.h"
+#include "Settings.h"
 
 Buzz_t Buzzer(BUZZER_PIN);
 
+// Convert delay, s to repeat delay in ms
+static const uint32_t DurationTbl[] = {
+      // 0 1 2 3 4 5 6 7  8  9
+         2,2,3,4,5,6,8,9,10,12
+};
+
 void BuzzTmrCallback(virtual_timer_t *vtp, void *p) {
     chSysLockFromISR();
-    Buzzer.ITmrCallback();
+    Buzzer.ITmrCallbackI();
     chSysUnlockFromISR();
 }
 
-void Buzz_t::ITmrCallback() {
-    if     (IPeriod > 2700) IPeriod -= 18;
-    else if(IPeriod > 1800) IPeriod -= 7;
-    else if(IPeriod > 1350) IPeriod -= 4;
-    else if(IPeriod > 900 ) IPeriod -= 3;
-    else if(IPeriod > 603 ) IPeriod -= 2;
-    else                    IPeriod -= 1;
+void Buzz_t::ITmrCallbackI() {
+    uint32_t Diff;
+    if(IPeriod > 2700) Diff = 18;
+    else Diff = 18000UL / (N * 14UL + 1000UL);
+    if(Diff < 1) Diff = 1;
+    N++;
+    IPeriod -= Diff;
     IChnl.SetTopValue(IPeriod);
     if(IPeriod >= PERIOD_MIN) {
-        chVTSetI(&ITmr, TIME_MS2I(BUZZ_DELAY_MS), (vtfunc_t)&BuzzTmrCallback, nullptr);
+        chVTSetI(&ITmr, Delay_st, (vtfunc_t)&BuzzTmrCallback, nullptr);
+    }
+    // Set volume at end
+    else {
+        IChnl.Set(Settings.SoundVolumeReady.Value * 2);
+        if(OnReadyCallback != nullptr) OnReadyCallback();
     }
 }
 
 void Buzz_t::BuzzUp() {
     IPeriod = PERIOD_MAX;
+    N=0;
+    Delay_st = TIME_MS2I(DurationTbl[Settings.Delay.Start2Ready.Value]);
     IChnl.SetTopValue(IPeriod);
-    IChnl.Set(VOLUME_NORMAL);
-    chVTSet(&ITmr, TIME_MS2I(BUZZ_DELAY_MS), (vtfunc_t)&BuzzTmrCallback, nullptr);
+    IChnl.Set(Settings.SoundVolumeStart.Value * 2);
+    chVTSet(&ITmr, Delay_st, (vtfunc_t)&BuzzTmrCallback, nullptr);
 }
 
