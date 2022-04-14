@@ -25,13 +25,13 @@ public:
             uint32_t TopValue) :
                 IChnl(PGpio, Pin, PTimer, TimerChnl, Inverted, OutputType, TopValue), IPeriod(0) {}
     uint16_t IPeriod;
-    ftVoidVoid OnReadyCallback = nullptr;
     void Init() {
         IChnl.Init();
         IChnl.SetTmrClkFreq(4000000); // 4 MHz input freq
         IChnl.Set(0);
     }
     void BuzzUp();
+    void BeReady();
     void Off() {
         chVTReset(&ITmr);
         IChnl.Set(0);

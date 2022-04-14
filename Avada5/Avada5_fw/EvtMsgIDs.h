@@ -12,9 +12,10 @@ enum EvtMsgId_t {
 
     // Pretending to eternity
     evtIdShellCmdRcvd,
-    evtIdEverySecond,
 
     evtIdButtons,
+    evtIdDelayEnd,
+    evtIdFlashEnd,
 
     // Usb
     evtIdUsbConnect,

@@ -1,13 +1,14 @@
 /*
  * buzzer.cpp
  *
- *  Created on: 25 ���. 2014 �.
- *      Author: Kreyl
+ *  Created on: 25-xx-2014
+ *  Author: Kreyl
  */
 
 #include "buzzer.h"
 #include "board.h"
 #include "Settings.h"
+#include "MsgQ.h"
 
 Buzz_t Buzzer(BUZZER_PIN);
 
@@ -37,7 +38,7 @@ void Buzz_t::ITmrCallbackI() {
     // Set volume at end
     else {
         IChnl.Set(Settings.SoundVolumeReady.Value * 2);
-        if(OnReadyCallback != nullptr) OnReadyCallback();
+        EvtQMain.SendNowOrExitI(EvtMsg_t(evtIdDelayEnd));
     }
 }
 
@@ -50,3 +51,8 @@ void Buzz_t::BuzzUp() {
     chVTSet(&ITmr, Delay_st, (vtfunc_t)&BuzzTmrCallback, nullptr);
 }
 
+void Buzz_t::BeReady() {
+    chVTReset(&ITmr);
+    IChnl.SetTopValue(PERIOD_MIN);
+    IChnl.Set(Settings.SoundVolumeReady.Value * 2);
+}

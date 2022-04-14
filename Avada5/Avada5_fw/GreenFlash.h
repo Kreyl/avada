@@ -13,22 +13,10 @@
 #define ILED_TARGET_mA  1500U
 #define DAC_ADJ_STEP    45U
 
-class GreenFlash_t {
-private:
-    virtual_timer_t ITmr;
-    uint16_t DacValue;
-    bool IsOn = false;
-    uint32_t IMax;
-    enum {staOff, staCharging, staReady, staCooling} State;
-    void SetDac(uint16_t v) { DAC->DHR12R1 = v; }
-    void Fire();
-    bool IsReady();
-public:
+namespace GreenFlash {
     void Init();
-    void Restart();
+    void OnDelayEnd();
     void OnBtnPress();
+    void OnFlashEnd();
     void AdjustCurrent(uint32_t ILed);
-    void Stop();
-};
-
-extern GreenFlash_t GreenFlash;
+}

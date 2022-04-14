@@ -461,9 +461,13 @@ void TmrKLCallback(virtual_timer_t *vtp, void *p) {
 }
 
 void TmrKL_t::IIrqHandler() {    // Call it inside callback
-    EvtMsg_t Msg(EvtId);
-    EvtQMain.SendNowOrExitI(Msg);
+    EvtQMain.SendNowOrExitI(EvtMsg_t(EvtId));
     if(TmrType == tktPeriodic) StartI();
+}
+
+void TmrKL_t::StartI() {
+    if(Period == 0) EvtQMain.SendNowOrExitI(EvtMsg_t(EvtId)); // Do not restart even if periodic: this will not work good anyway
+    else chVTSetI(&Tmr, Period, TmrKLCallback, this); // Will be reset before start
 }
 #endif
 

@@ -44,12 +44,12 @@ void OnAdcDoneI() {
     VRAdc = VRAdc >> 4;
     // Calc current
     uint32_t ILed = (((10 * ADC_VREFINT_CAL_mV * (uint32_t)ADC_VREFINT_CAL) / ADC_MAX_VALUE) * VRAdc) / VRef;
-    GreenFlash.AdjustCurrent(ILed);
+    GreenFlash::AdjustCurrent(ILed);
 }
 
 const AdcSetup_t AdcSetup = {
         .SampleTime = ast55d5Cycles,
-        .Oversampling = AdcSetup_t::oversmp16,
+        .Oversampling = AdcSetup_t::oversmp8,
         .DoneCallback = OnAdcDoneI,
         .Channels = {
                 {LED_CURR_PIN},
@@ -89,8 +89,7 @@ int main(void) {
 
     Buzzer.Init();
     Adc.Init();
-    GreenFlash.Init();
-    GreenFlash.Restart();
+    GreenFlash::Init();
 
     UsbMsd.Init();
     SimpleSensors::Init();
@@ -109,13 +108,13 @@ void ITask() {
                 while(((CmdUart_t*)Msg.Ptr)->TryParseRxBuff() == retvOk) OnCmd((Shell_t*)((CmdUart_t*)Msg.Ptr));
                 break;
 
-            case evtIdEverySecond:
-                break;
-
             case evtIdButtons:
                 Printf("Btn\r");
-                GreenFlash.OnBtnPress();
+                GreenFlash::OnBtnPress();
                 break;
+
+            case evtIdDelayEnd: GreenFlash::OnDelayEnd(); break;
+            case evtIdFlashEnd: GreenFlash::OnFlashEnd(); break;
 
 #if 1       // ======= USB =======
             case evtIdUsbConnect:
@@ -178,10 +177,10 @@ void OnCmd(Shell_t *PShell) {
     // Handle command
     if(PCmd->NameIs("Ping")) PShell->Ok();
 
-//    else if(PCmd->NameIs("On")) {
-//        GreenFlash.Fire();
-//        PShell->Ok();
-//    }
+    else if(PCmd->NameIs("Btn")) {
+        EvtQMain.SendNowOrExit(EvtMsg_t(evtIdButtons));
+        PShell->Ok();
+    }
     else if(PCmd->NameIs("Off")) {
 //        GreenFlash.LedOff();
 //        Adc.Stop();

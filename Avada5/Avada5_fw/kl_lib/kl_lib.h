@@ -285,7 +285,7 @@ enum TmrKLType_t {tktOneShot, tktPeriodic};
 class TmrKL_t : private IrqHandler_t {
 private:
     virtual_timer_t Tmr;
-    void StartI() { chVTSetI(&Tmr, Period, TmrKLCallback, this); }  // Will be reset before start
+    void StartI();
     sysinterval_t Period;
     EvtMsgId_t EvtId;
     TmrKLType_t TmrType;

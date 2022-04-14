@@ -50,9 +50,9 @@ public:
     struct {
         ValueU32_t Start2Ready   {"Start2Ready",   "Delay", 0, 9, 4};
         ValueU32_t Ready2Press   {"Ready2Press",   "Delay", 0, 9, 0};
-        ValueU32_t Press2Fire    {"Press2Fire",    "Delay", 0, 9, 0};
+        ValueU32_t BeforeFlash   {"BeforeFlash",   "Delay", 0, 9, 0};
         ValueU32_t OffIfNotFired {"OffIfNotFired", "Delay", 0, 9, 0};
-        ValueU32_t AfterFire     {"AfterFire",     "Delay", 0, 9, 0};
+        ValueU32_t BeforeRestart {"BeforeRestart", "Delay", 0, 9, 0};
     } Delay;
 
     uint8_t Load() {
@@ -63,9 +63,10 @@ public:
         if(LoadValue(ModeAfterFire) != retvOk) rslt = retvFail;
         if(LoadValue(Delay.Start2Ready) != retvOk) rslt = retvFail;
         if(LoadValue(Delay.Ready2Press) != retvOk) rslt = retvFail;
-        if(LoadValue(Delay.Press2Fire) != retvOk) rslt = retvFail;
+        if(LoadValue(Delay.BeforeFlash) != retvOk) rslt = retvFail;
         if(LoadValue(Delay.OffIfNotFired) != retvOk) rslt = retvFail;
-        if(LoadValue(Delay.AfterFire) != retvOk) rslt = retvFail;
+        if(LoadValue(Delay.BeforeRestart) != retvOk) rslt = retvFail;
+
         return rslt;
     }
 };
