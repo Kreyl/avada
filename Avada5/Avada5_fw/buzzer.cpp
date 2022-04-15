@@ -32,14 +32,8 @@ void Buzz_t::ITmrCallbackI() {
     N++;
     IPeriod -= Diff;
     IChnl.SetTopValue(IPeriod);
-    if(IPeriod >= PERIOD_MIN) {
-        chVTSetI(&ITmr, Delay_st, (vtfunc_t)&BuzzTmrCallback, nullptr);
-    }
-    // Set volume at end
-    else {
-        IChnl.Set(Settings.SoundVolumeReady.Value * 2);
-        EvtQMain.SendNowOrExitI(EvtMsg_t(evtIdDelayEnd));
-    }
+    if(IPeriod >= PERIOD_MIN) chVTSetI(&ITmr, Delay_st, (vtfunc_t)&BuzzTmrCallback, nullptr);
+    else EvtQMain.SendNowOrExitI(EvtMsg_t(evtIdDelayEnd));
 }
 
 void Buzz_t::BuzzUp() {
@@ -47,12 +41,20 @@ void Buzz_t::BuzzUp() {
     N=0;
     Delay_st = TIME_MS2I(DurationTbl[Settings.Delay.Start2Ready.Value]);
     IChnl.SetTopValue(IPeriod);
-    IChnl.Set(Settings.SoundVolumeCharging.Value * 2);
     chVTSet(&ITmr, Delay_st, (vtfunc_t)&BuzzTmrCallback, nullptr);
 }
 
 void Buzz_t::BeReady() {
     chVTReset(&ITmr);
     IChnl.SetTopValue(PERIOD_MIN);
-    IChnl.Set(Settings.SoundVolumeReady.Value * 2);
+}
+
+void Buzz_t::BeWaitingRestart() {
+    chVTReset(&ITmr);
+    IChnl.SetTopValue(PERIOD_MAX);
+}
+
+void Buzz_t::Off() {
+    chVTReset(&ITmr);
+    IChnl.Set(0);
 }

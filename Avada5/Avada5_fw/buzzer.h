@@ -30,12 +30,13 @@ public:
         IChnl.SetTmrClkFreq(4000000); // 4 MHz input freq
         IChnl.Set(0);
     }
+    void SetVolume(uint16_t AVolume) { IChnl.Set(AVolume * 2); } // [0; 100] -> [0; 200]
+
     void BuzzUp();
     void BeReady();
-    void Off() {
-        chVTReset(&ITmr);
-        IChnl.Set(0);
-    }
+    void BeWaitingRestart();
+    void Off();
+
     bool IsOnTop() { return (IPeriod <= PERIOD_MIN); }
     Buzz_t(const PwmSetup_t APinSetup) : IChnl(APinSetup), IPeriod(0) {}
     // Inner use

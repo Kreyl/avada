@@ -26,6 +26,7 @@ void ITask();
 LedBlinker_t InfoLed{INFO_LED};
 FATFS FlashFS;
 bool UsbIsConnected = false;
+bool IsCharging = false;
 Settings_t Settings;
 #endif
 
@@ -61,16 +62,11 @@ const AdcSetup_t AdcSetup = {
 int main(void) {
     // ==== Init Clock system ====
     Clk.EnablePrefetch();
-//    Clk.SetupFlashLatency(48000000);
-//    Clk.SwitchTo(csHSI48);
     Clk.UpdateFreqValues();
 
     // === Init OS ===
     halInit();
     chSysInit();
-
-//    Clk.SwitchToHsi48();
-//    Clk.UpdateFreqValues();
 
     // ==== Init hardware ====
     EvtQMain.Init();
@@ -108,11 +104,7 @@ void ITask() {
                 while(((CmdUart_t*)Msg.Ptr)->TryParseRxBuff() == retvOk) OnCmd((Shell_t*)((CmdUart_t*)Msg.Ptr));
                 break;
 
-            case evtIdButtons:
-                Printf("Btn\r");
-                GreenFlash::OnBtnPress();
-                break;
-
+            case evtIdButtons:  GreenFlash::OnBtnPress(); break;
             case evtIdDelayEnd: GreenFlash::OnDelayEnd(); break;
             case evtIdFlashEnd: GreenFlash::OnFlashEnd(); break;
 
@@ -148,6 +140,8 @@ void ITask() {
                 }
                 else Printf("Hsi Fail\r");
                 Printf("USB disconnect\r");
+                if(Settings.Load() == retvOk) InfoLed.StartOrRestart(lbsqOk);
+                else InfoLed.StartOrRestart(lbsqBlink3);
             } break;
 
             case evtIdUsbReady:
@@ -171,6 +165,15 @@ void ProcessUsbDetect(PinSnsState_t *PState, uint32_t Len) {
     }
 }
 
+void ProcessCharging(PinSnsState_t *PState, uint32_t Len) {
+    if(*PState == pssLo) {
+        InfoLed.StartOrContinue(lbsqCharging);
+    }
+    else if(*PState == pssRising) { // Charge stopped
+        InfoLed.StartOrContinue(lbsqOk);
+    }
+}
+
 void OnCmd(Shell_t *PShell) {
     Cmd_t *PCmd = &PShell->Cmd;
 //    Printf("%S\r", PCmd->Name);
@@ -186,7 +189,6 @@ void OnCmd(Shell_t *PShell) {
 //        Adc.Stop();
         PShell->Ok();
     }
-
 
     else PShell->CmdUnknown();
 }

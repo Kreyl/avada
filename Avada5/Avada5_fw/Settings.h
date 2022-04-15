@@ -25,30 +25,37 @@ public:
         else if(Value < Min) Value = Min;
     }
     void Print() { Printf("%S = %u\r", Name, Value); }
-};
-
-class Settings_t {
-private:
-    uint8_t LoadValue(ValueU32_t &val) {
-        if(ini::Read<uint32_t>(SETTINGS_FILENAME, val.Section, val.Name, &val.Value) == retvOk) {
-            val.CheckAndCorrect();
-            val.Print();
+    uint8_t Load() {
+        if(ini::Read<uint32_t>(SETTINGS_FILENAME, Section, Name, &Value) == retvOk) {
+            CheckAndCorrect();
+//            Print();
         }
         else {
-            Printf("%S read fail\r", val.Name);
+            Printf("%S %S read fail\r", Section, Name);
             return retvFail;
         }
         return retvOk;
     }
+};
+
+class Settings_t {
+private:
+
 public:
     ValueU32_t FlashDuration_ms    {"FlashDuration",       "Common", 27, 999, 207};
-    ValueU32_t SoundVolumeCharging {"SoundVolumeCharging", "Common",  0, 100,  12};
-    ValueU32_t SoundVolumeReady    {"SoundVolumeReady",    "Common",  0, 100,  18};
     // Mode after fire: 0 is restart, 1 is ready
     ValueU32_t ModeAfterFire{"ModeAfterFire", "Common", 0, 1, 0};
+    // Sound Volumes
+    struct {
+        ValueU32_t Charging      {"Charging",      "Volume",  0, 100,  12};
+        ValueU32_t Ready         {"Ready",         "Volume",  0, 100,  18};
+        ValueU32_t WaitingBtn    {"WaitingBtn",    "Volume",  0, 100,  27};
+        ValueU32_t BeforeFlash   {"BeforeFlash",   "Volume",  0, 100,  36};
+        ValueU32_t BeforeRestart {"BeforeRestart", "Volume",  0, 100,  9};
+    } Volume;
     // Delays in seconds
     struct {
-        ValueU32_t Start2Ready   {"Start2Ready",   "Delay", 0, 9, 4};
+        ValueU32_t Start2Ready   {"Charging",      "Delay", 0, 9, 4};
         ValueU32_t Ready2Press   {"Ready2Press",   "Delay", 0, 9, 0};
         ValueU32_t BeforeFlash   {"BeforeFlash",   "Delay", 0, 9, 0};
         ValueU32_t OffIfNotFired {"OffIfNotFired", "Delay", 0, 9, 0};
@@ -57,15 +64,20 @@ public:
 
     uint8_t Load() {
         uint8_t rslt = retvOk;
-        if(LoadValue(FlashDuration_ms) != retvOk) rslt = retvFail;
-        if(LoadValue(SoundVolumeCharging) != retvOk) rslt = retvFail;
-        if(LoadValue(SoundVolumeReady) != retvOk) rslt = retvFail;
-        if(LoadValue(ModeAfterFire) != retvOk) rslt = retvFail;
-        if(LoadValue(Delay.Start2Ready) != retvOk) rslt = retvFail;
-        if(LoadValue(Delay.Ready2Press) != retvOk) rslt = retvFail;
-        if(LoadValue(Delay.BeforeFlash) != retvOk) rslt = retvFail;
-        if(LoadValue(Delay.OffIfNotFired) != retvOk) rslt = retvFail;
-        if(LoadValue(Delay.BeforeRestart) != retvOk) rslt = retvFail;
+        if(FlashDuration_ms.Load()!= retvOk) rslt = retvFail;
+        if(ModeAfterFire.Load()!= retvOk) rslt = retvFail;
+
+        if(Volume.Charging.Load()!= retvOk) rslt = retvFail;
+        if(Volume.Ready.Load()!= retvOk) rslt = retvFail;
+        if(Volume.WaitingBtn.Load()!= retvOk) rslt = retvFail;
+        if(Volume.BeforeFlash.Load()!= retvOk) rslt = retvFail;
+        if(Volume.BeforeRestart.Load()!= retvOk) rslt = retvFail;
+
+        if(Delay.Start2Ready.Load()!= retvOk) rslt = retvFail;
+        if(Delay.Ready2Press.Load()!= retvOk) rslt = retvFail;
+        if(Delay.BeforeFlash.Load()!= retvOk) rslt = retvFail;
+        if(Delay.OffIfNotFired.Load()!= retvOk) rslt = retvFail;
+        if(Delay.BeforeRestart.Load()!= retvOk) rslt = retvFail;
 
         return rslt;
     }

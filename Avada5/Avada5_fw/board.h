@@ -44,6 +44,9 @@
 // Measurement
 #define LED_CURR_PIN    GPIOA, 3, 3 // PA3, ADC channel 3
 
+// Battery
+#define IS_CHARGING     GPIOC, 5, pudPullUp
+
 // Buzzer
 #define BUZZER_PIN      GPIOC, 6, TIM3, 1, invNotInverted, omPushPull, 45
 

@@ -241,19 +241,22 @@ const BaseChunk_t lbsqOk[] = {
         {csSetup, 0},
         {csEnd}
 };
+
 const BaseChunk_t lbsqBlink3[] = {
         {csSetup, 1},
         {csWait, BLINK_DELAY_MS},
         {csSetup, 0},
         {csWait, BLINK_DELAY_MS},
-        {csSetup, 1},
-        {csWait, BLINK_DELAY_MS},
-        {csSetup, 0},
-        {csWait, BLINK_DELAY_MS},
-        {csSetup, 1},
-        {csWait, BLINK_DELAY_MS},
-        {csSetup, 0},
+        {csRepeat, 3},
         {csEnd}
+};
+
+const BaseChunk_t lbsqCharging[] = {
+        {csSetup, 1},
+        {csWait, 720},
+        {csSetup, 0},
+        {csWait, 270},
+        {csGoto, 0}
 };
 #endif
 
