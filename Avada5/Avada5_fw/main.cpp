@@ -78,8 +78,7 @@ int main(void) {
 
     // Init filesystem
     if(f_mount(&FlashFS, "", 0) == FR_OK) {
-        if(Settings.Load() == retvOk) InfoLed.StartOrRestart(lbsqOk);
-        else InfoLed.StartOrRestart(lbsqBlink3);
+        if(Settings.Load() != retvOk) InfoLed.StartOrRestart(lbsqBlink3);
     }
     else Printf("FS error\r");
 
@@ -166,11 +165,10 @@ void ProcessUsbDetect(PinSnsState_t *PState, uint32_t Len) {
 }
 
 void ProcessCharging(PinSnsState_t *PState, uint32_t Len) {
-    if(*PState == pssLo) {
-        InfoLed.StartOrContinue(lbsqCharging);
-    }
-    else if(*PState == pssRising) { // Charge stopped
-        InfoLed.StartOrContinue(lbsqOk);
+    if(*PState == pssLo) InfoLed.StartOrContinue(lbsqCharging);
+    else if(*PState == pssHi) { // Charge stopped
+        if(UsbIsConnected) InfoLed.StartOrContinue(lbsqChargingDone);
+        else               InfoLed.Stop();
     }
 }
 

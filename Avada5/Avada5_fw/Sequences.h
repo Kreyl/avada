@@ -258,6 +258,11 @@ const BaseChunk_t lbsqCharging[] = {
         {csWait, 270},
         {csGoto, 0}
 };
+
+const BaseChunk_t lbsqChargingDone[] = {
+        {csSetup, 1},
+        {csEnd}
+};
 #endif
 
 #if 0 // =========================== LED Smooth ================================
