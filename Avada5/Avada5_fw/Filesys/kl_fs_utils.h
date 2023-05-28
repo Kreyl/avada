@@ -1,7 +1,7 @@
 /*
  * kl_fs_common.h
  *
- *  Created on: 30 ÿíâ. 2016 ã.
+ *  Created on: 30 ï¿½ï¿½ï¿½. 2016 ï¿½.
  *      Author: Kreyl
  */
 
@@ -166,8 +166,8 @@ namespace ini { // =================== ini file operations =====================
  * ...
  */
 
+#if 1 // ==== Open / close file every time ====
 uint8_t ReadString(const char *AFileName, const char *ASection, const char *AKey, char **PPOutput);
-
 uint8_t ReadStringTo(const char *AFileName, const char *ASection, const char *AKey, char *POutput, uint32_t MaxLen);
 
 template <typename T>
@@ -187,6 +187,16 @@ void WriteSection(FIL *PFile, const char *ASection);
 void WriteString(FIL *PFile, const char *AKey, char *AValue);
 void WriteInt32(FIL *PFile, const char *AKey, const int32_t AValue);
 void WriteNewline(FIL *PFile);
+#endif
+
+#if 1 // ==== Open file once ====
+uint8_t OpenFile(const char *AFileName, FIL *PFile);
+void CloseFile(FIL *PFile);
+uint8_t ReadString  (FIL *PFile, const char *ASection, const char *AKey, char **PPOutput);
+uint8_t ReadStringTo(FIL *PFile, const char *ASection, const char *AKey, char *POutput, uint32_t MaxLen);
+uint8_t ReadUint32(FIL *PFile, const char *ASection, const char *AKey, uint32_t *POutput);
+uint8_t ReadInt32(FIL *PFile, const char *ASection, const char *AKey, int32_t *POutput);
+#endif
 
 } // namespace
 

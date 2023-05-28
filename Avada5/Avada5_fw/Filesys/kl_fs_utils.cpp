@@ -223,6 +223,7 @@ static inline char* striptrailing(char *S) {
     return S;
 }
 
+#if 1 // ==== Open / close file every time ====
 uint8_t ReadString(const char *AFileName, const char *ASection, const char *AKey, char **PPOutput) {
     FRESULT rslt;
 //    Printf("%S %S %S\r", __FUNCTION__, AFileName, ASection);
@@ -334,7 +335,116 @@ uint8_t ReadColor (const char *AFileName, const char *ASection, const char *AKey
     }
     else return retvFail;
 }
+#endif
 
+#if 1 // ==== Open file once ====
+uint8_t OpenFile(const char *AFileName, FIL *PFile) {
+    FRESULT rslt;
+    rslt = f_open(PFile, AFileName, FA_READ+FA_OPEN_EXISTING);
+    if(rslt != FR_OK) {
+        if (rslt == FR_NO_FILE) Printf("%S: not found\r", AFileName);
+        else Printf("%S: openFile error: %u\r", AFileName, rslt);
+        return retvFail;
+    }
+    // Check if zero file
+    if(f_size(&CommonFile) == 0) {
+        f_close(&CommonFile);
+        Printf("Empty file\r");
+        return retvFail;
+    }
+    return retvOk;
+}
+
+void CloseFile(FIL *PFile) { f_close(PFile); }
+
+uint8_t ReadString  (FIL *PFile, const char *ASection, const char *AKey, char **PPOutput) {
+    f_rewind(PFile);
+    // Move through file one line at a time until a section is matched or EOF.
+    char *StartP, *EndP = nullptr;
+    int32_t len = strlen(ASection);
+    do {
+        if(f_gets(IStr, SD_STRING_SZ, &CommonFile) == nullptr) {
+            Printf("iniNoSection %S\r", ASection);
+            return retvFail;
+        }
+        StartP = skipleading(IStr);
+        if((*StartP != '[') or (*StartP == ';') or (*StartP == '#')) continue;
+        EndP = strchr(StartP, ']');
+        if((EndP == NULL) or ((int32_t)(EndP-StartP-1) != len)) continue;
+    } while (strncmp(StartP+1, ASection, len) != 0);
+
+    // Section found, find the key
+    len = strlen(AKey);
+    do {
+        if(!f_gets(IStr, SD_STRING_SZ, &CommonFile) or *(StartP = skipleading(IStr)) == '[') {
+            Printf("iniNoKey %S\r", AKey);
+            return retvFail;
+        }
+        StartP = skipleading(IStr);
+        if((*StartP == ';') or (*StartP == '#')) continue;
+        EndP = strchr(StartP, '=');
+        if(EndP == NULL) continue;
+    } while(((int32_t)(skiptrailing(EndP, StartP)-StartP) != len or strncmp(StartP, AKey, len) != 0));
+
+    // Process Key's value
+    StartP = skipleading(EndP + 1);
+    // Remove a trailing comment
+    uint8_t isstring = 0;
+    for(EndP = StartP; (*EndP != '\0') and (((*EndP != ';') and (*EndP != '#')) or isstring) and ((uint32_t)(EndP - StartP) < SD_STRING_SZ); EndP++) {
+        if (*EndP == '"') {
+            if (*(EndP + 1) == '"') EndP++;     // skip "" (both quotes)
+            else isstring = !isstring; // single quote, toggle isstring
+        }
+        else if (*EndP == '\\' && *(EndP + 1) == '"') EndP++; // skip \" (both quotes)
+    } // for
+    *EndP = '\0';   // Terminate at a comment
+    striptrailing(StartP);
+    *PPOutput = StartP;
+    return retvOk;
+}
+
+uint8_t ReadStringTo(FIL *PFile, const char *ASection, const char *AKey, char *POutput, uint32_t MaxLen) {
+    char *S;
+    if(ReadString(PFile, ASection, AKey, &S) == retvOk) {
+        // Copy what was read
+        if(strlen(S) > (MaxLen-1)) {
+            strncpy(POutput, S, (MaxLen-1));
+            POutput[MaxLen-1] = 0;  // terminate string
+        }
+        else strcpy(POutput, S);
+        return retvOk;
+    }
+    else return retvFail;
+}
+
+uint8_t ReadUint32(FIL *PFile, const char *ASection, const char *AKey, uint32_t *POutput) {
+    char *S = nullptr;
+    if(ReadString(PFile, ASection, AKey, &S) == retvOk) {
+        char *p;
+        uint32_t tmp = strtoul(S, &p, 10);
+        if(*p == '\0') {
+            *POutput = tmp;
+            return retvOk;
+        }
+        else return retvNotANumber;
+    }
+    else return retvFail;
+}
+
+uint8_t ReadInt32(FIL *PFile, const char *ASection, const char *AKey, int32_t *POutput) {
+    char *S = nullptr;
+    if(ReadString(PFile, ASection, AKey, &S) == retvOk) {
+        char *p;
+        int32_t tmp = strtol(S, &p, 10);
+        if(*p == '\0') {
+            *POutput = tmp;
+            return retvOk;
+        }
+        else return retvNotANumber;
+    }
+    else return retvFail;
+}
+#endif
 } // Namespace
 
 namespace csv { // =================== csv file operations =====================

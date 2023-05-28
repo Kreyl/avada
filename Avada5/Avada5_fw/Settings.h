@@ -26,7 +26,7 @@ public:
     }
     void Print() { Printf("%S = %u\r", Name, Value); }
     uint8_t Load() {
-        if(ini::Read<uint32_t>(SETTINGS_FILENAME, Section, Name, &Value) == retvOk) {
+        if(ini::ReadUint32(&CommonFile, Section, Name, &Value) == retvOk) {
             CheckAndCorrect();
 //            Print();
         }
@@ -63,6 +63,7 @@ public:
     } Delay;
 
     uint8_t Load() {
+        if(ini::OpenFile(SETTINGS_FILENAME, &CommonFile) != retvOk) return retvFail;
         uint8_t rslt = retvOk;
         if(FlashDuration_ms.Load()!= retvOk) rslt = retvFail;
         if(ModeAfterFire.Load()!= retvOk) rslt = retvFail;
@@ -79,6 +80,7 @@ public:
         if(Delay.OffIfNotFired.Load()!= retvOk) rslt = retvFail;
         if(Delay.BeforeRestart.Load()!= retvOk) rslt = retvFail;
 
+        ini::CloseFile(&CommonFile);
         return rslt;
     }
 };
