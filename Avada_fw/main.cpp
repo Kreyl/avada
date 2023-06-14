@@ -1,63 +1,67 @@
+#include <uart.h>
+#include "ch.h"
 #include "hal.h"
 #include "MsgQ.h"
 #include "shell.h"
-#include "uart.h"
+#include "kl_lib.h"
 #include "SimpleSensors.h"
 #include "buttons.h"
-#include "board.h"
+#include "led.h"
+#include "Sequences.h"
 #include "buzzer.h"
+#include "adcF072.h"
+#include "usb_msd.h"
+#include "Settings.h"
+#include "GreenFlash.h"
+#include "kl_fs_utils.h"
 
-#define FLASH_DURATION  45
-#define LED_DAC_VALUE   1600    // 1A
-
+#if 1 // ======================== Variables and defines ========================
 // Forever
 EvtMsgQ_t<EvtMsg_t, MAIN_EVT_Q_LEN> EvtQMain;
-extern CmdUart_t Uart;
+static const UartParams_t CmdUartParams(115200, CMD_UART_PARAMS);
+CmdUart_t Uart{CmdUartParams};
 void OnCmd(Shell_t *PShell);
 void ITask();
 
-// ==== Flash ====
-void FlashCallback(void *p);
+LedBlinker_t InfoLed{INFO_LED};
+FATFS FlashFS;
+bool UsbIsConnected = false;
+bool IsCharging = false;
+Settings_t Settings;
+#endif
 
-class GreenFlash_t {
-private:
-    virtual_timer_t ITmr;
-    void LedOn() {
-//        PinSetLo(LED_PIN);
-        DAC->DHR12R1 = LED_DAC_VALUE;
+#if 1 // ==== ADC ====
+void OnAdcDoneI() {
+    AdcBuf_t &FBuf = Adc.GetBuf();
+    // Calculate averaged value
+    uint32_t N = FBuf.size() / 2; // As 2 channels used
+    uint32_t VRef=0, VRAdc=0;
+    uint16_t *p = FBuf.data();
+    for(uint32_t i=0; i<N; i++) {
+        VRef += *p++;
+        VRAdc += *p++;
     }
-public:
-    void Fire() {
-        LedOn();
-        Buzzer.Off();
-        chVTSet(&ITmr, MS2ST(FLASH_DURATION), FlashCallback, nullptr);
-    }
-    void Restart() { Buzzer.BuzzUp(); }
-    bool IsReady() { return Buzzer.IsOnTop(); }
-    void LedOff() {
-//        PinSetHi(LED_PIN);
-        DAC->DHR12R1 = 0;
-    }
-    void Init() {
-//        PinSetupOut(LED_PIN, omOpenDrain);
-//        PinSetHi(LED_PIN);
-        PinSetupAnalog(LED_PIN);
-        // Init DAC
-        rccEnableDAC1(FALSE);
-        DAC->CR = DAC_CR_EN1;
-        DAC->DHR12R1 = 0;
-    }
-} GreenFlash;
-
-void FlashCallback(void *p) {
-    GreenFlash.LedOff();
+    VRef = VRef >> 4;
+    VRAdc = VRAdc >> 4;
+    // Calc current
+    uint32_t ILed = (((10 * ADC_VREFINT_CAL_mV * (uint32_t)ADC_VREFINT_CAL) / ADC_MAX_VALUE) * VRAdc) / VRef;
+    GreenFlash::AdjustCurrent(ILed);
 }
+
+const AdcSetup_t AdcSetup = {
+        .SampleTime = ast55d5Cycles,
+        .Oversampling = AdcSetup_t::oversmp8,
+        .DoneCallback = OnAdcDoneI,
+        .Channels = {
+                {LED_CURR_PIN},
+                {nullptr, 0, ADC_VREFINT_CHNL}
+        }
+};
+#endif
 
 int main(void) {
     // ==== Init Clock system ====
-    SetupVCore(vcore1V5);
     Clk.EnablePrefetch();
-    Clk.SetMSI4MHz();
     Clk.UpdateFreqValues();
 
     // === Init OS ===
@@ -66,15 +70,24 @@ int main(void) {
 
     // ==== Init hardware ====
     EvtQMain.Init();
-    Uart.Init(115200);
+    Uart.Init();
     Printf("\r%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
     Clk.PrintFreqs();
 
-    Buzzer.Init();
-    GreenFlash.Init();
+    InfoLed.Init();
 
+    // Init filesystem
+    if(f_mount(&FlashFS, "", 0) == FR_OK) {
+        if(Settings.Load() != retvOk) InfoLed.StartOrRestart(lbsqBlink3);
+    }
+    else Printf("FS error\r");
+
+    Buzzer.Init();
+    Adc.Init();
+    GreenFlash::Init();
+
+    UsbMsd.Init();
     SimpleSensors::Init();
-    GreenFlash.Restart();
 
     // Main cycle
     ITask();
@@ -84,42 +97,96 @@ __noreturn
 void ITask() {
     while(true) {
         EvtMsg_t Msg = EvtQMain.Fetch(TIME_INFINITE);
+//        Printf("%u\r", Msg.ID);
         switch(Msg.ID) {
-            case evtIdShellCmd:
-                OnCmd((Shell_t*)Msg.Ptr);
-                ((Shell_t*)Msg.Ptr)->SignalCmdProcessed();
+            case evtIdShellCmdRcvd:
+                while(((CmdUart_t*)Msg.Ptr)->TryParseRxBuff() == retvOk) OnCmd((Shell_t*)((CmdUart_t*)Msg.Ptr));
                 break;
 
-            case evtIdButtons:
-                Printf("Btn\r");
-                if(GreenFlash.IsReady()) {
-                    GreenFlash.Fire();
-                    GreenFlash.Restart();
+            case evtIdButtons:  GreenFlash::OnBtnPress(); break;
+            case evtIdDelayEnd: GreenFlash::OnDelayEnd(); break;
+            case evtIdFlashEnd: GreenFlash::OnFlashEnd(); break;
+
+#if 1       // ======= USB =======
+            case evtIdUsbConnect:
+                Printf("USB connect\r");
+                // Enable HSI48
+                chSysLock();
+                Clk.SetupFlashLatency(48000000);
+                while(Clk.SwitchTo(csHSI48) != retvOk) {
+                    PrintfI("Hsi48 Fail\r");
+                    chThdSleepS(TIME_MS2I(207));
                 }
+                Clk.UpdateFreqValues();
+                chSysUnlock();
+                Clk.PrintFreqs();
+                Clk.SelectUSBClock_HSI48();
+                Clk.EnableCRS();
+                UsbMsd.Connect();
                 break;
+
+            case evtIdUsbDisconnect: {
+                UsbMsd.Disconnect();
+                chSysLock();
+                uint8_t r = Clk.SwitchTo(csHSI);
+                Clk.UpdateFreqValues();
+                chSysUnlock();
+                Clk.PrintFreqs();
+                if(r == retvOk) {
+                    Clk.DisableCRS();
+                    Clk.DisableHSI48();
+                    Clk.SetupFlashLatency(8000000);
+                }
+                else Printf("Hsi Fail\r");
+                Printf("USB disconnect\r");
+                if(Settings.Load() == retvOk) InfoLed.StartOrRestart(lbsqOk);
+                else InfoLed.StartOrRestart(lbsqBlink3);
+            } break;
+
+            case evtIdUsbReady:
+                Printf("USB ready\r");
+                break;
+#endif
 
             default: break;
         } // switch
     } // while true
 }
 
-#if 1 // ======================= Command processing ============================
+void ProcessUsbDetect(PinSnsState_t *PState, uint32_t Len) {
+    if((*PState == pssRising or *PState == pssHi) and !UsbIsConnected) {
+        UsbIsConnected = true;
+        EvtQMain.SendNowOrExit(EvtMsg_t(evtIdUsbConnect));
+    }
+    else if((*PState == pssFalling or *PState == pssLo) and UsbIsConnected) {
+        UsbIsConnected = false;
+        EvtQMain.SendNowOrExit(EvtMsg_t(evtIdUsbDisconnect));
+    }
+}
+
+void ProcessCharging(PinSnsState_t *PState, uint32_t Len) {
+    if(*PState == pssLo) InfoLed.StartOrContinue(lbsqCharging);
+    else if(*PState == pssHi) { // Charge stopped
+        if(UsbIsConnected) InfoLed.StartOrContinue(lbsqChargingDone);
+        else               InfoLed.Stop();
+    }
+}
+
 void OnCmd(Shell_t *PShell) {
     Cmd_t *PCmd = &PShell->Cmd;
-//    __unused int32_t dw32 = 0;  // May be unused in some configurations
-//    Uart.Printf("\r%S\r", PCmd->Name);
+//    Printf("%S\r", PCmd->Name);
     // Handle command
-    if(PCmd->NameIs("Ping")) PShell->Ack(retvOk);
-    else if(PCmd->NameIs("Version")) PShell->Printf("%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
+    if(PCmd->NameIs("Ping")) PShell->Ok();
 
-    else if(PCmd->NameIs("V")) {
-        uint16_t v;
-        if(PCmd->GetNext<uint16_t>(&v) == retvOk) {
-            DAC->DHR12R1 = v;
-            PShell->Ack(retvOk);
-        }
+    else if(PCmd->NameIs("Btn")) {
+        EvtQMain.SendNowOrExit(EvtMsg_t(evtIdButtons));
+        PShell->Ok();
+    }
+    else if(PCmd->NameIs("Off")) {
+//        GreenFlash.LedOff();
+//        Adc.Stop();
+        PShell->Ok();
     }
 
-    else PShell->Ack(retvCmdUnknown);
+    else PShell->CmdUnknown();
 }
-#endif

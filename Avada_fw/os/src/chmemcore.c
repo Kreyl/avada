@@ -1,12 +1,12 @@
 /*
-    ChibiOS - Copyright (C) 2006..2015 Giovanni Di Sirio.
+    ChibiOS - Copyright (C) 2006,2007,2008,2009,2010,2011,2012,2013,2014,
+              2015,2016,2017,2018,2019,2020,2021 Giovanni Di Sirio.
 
     This file is part of ChibiOS.
 
     ChibiOS is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+    the Free Software Foundation version 3 of the License.
 
     ChibiOS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -18,10 +18,10 @@
 */
 
 /**
- * @file    chmemcore.c
+ * @file    oslib/src/chmemcore.c
  * @brief   Core memory manager code.
  *
- * @addtogroup memcore
+ * @addtogroup oslib_memcore
  * @details Core Memory Manager related APIs and services.
  *          <h2>Operation mode</h2>
  *          The core memory manager is a simplified allocator that only
@@ -30,8 +30,8 @@
  *          This allocator is meant as a memory blocks provider for the
  *          other allocators such as:
  *          - C-Runtime allocator (through a compiler specific adapter module).
- *          - Heap allocator (see @ref heaps).
- *          - Memory pools allocator (see @ref pools).
+ *          - Heap allocator (see @ref oslib_memheaps).
+ *          - Memory pools allocator (see @ref oslib_mempools).
  *          .
  *          By having a centralized memory provider the various allocators
  *          can coexist and share the main memory.<br>
@@ -40,6 +40,7 @@
  *          blocks.
  * @pre     In order to use the core memory manager APIs the @p CH_CFG_USE_MEMCORE
  *          option must be enabled in @p chconf.h.
+ * @note    Compatible with RT and NIL.
  * @{
  */
 
@@ -51,6 +52,11 @@
 /* Module exported variables.                                                */
 /*===========================================================================*/
 
+/**
+ * @brief   Memory core descriptor.
+ */
+memcore_t ch_memcore;
+
 /*===========================================================================*/
 /* Module local types.                                                       */
 /*===========================================================================*/
@@ -58,9 +64,6 @@
 /*===========================================================================*/
 /* Module local variables.                                                   */
 /*===========================================================================*/
-
-static uint8_t *nextmem;
-static uint8_t *endmem;
 
 /*===========================================================================*/
 /* Module local functions.                                                   */
@@ -75,72 +78,133 @@ static uint8_t *endmem;
  *
  * @notapi
  */
-void _core_init(void) {
+void __core_init(void) {
 #if CH_CFG_MEMCORE_SIZE == 0
   extern uint8_t __heap_base__[];
   extern uint8_t __heap_end__[];
 
   /*lint -save -e9033 [10.8] Required cast operations.*/
-  nextmem = (uint8_t *)MEM_ALIGN_NEXT(__heap_base__);
-  endmem = (uint8_t *)MEM_ALIGN_PREV(__heap_end__);
+  ch_memcore.basemem = __heap_base__;
+  ch_memcore.topmem  = __heap_end__;
   /*lint restore*/
 #else
-  static stkalign_t buffer[MEM_ALIGN_NEXT(CH_CFG_MEMCORE_SIZE) /
-                           MEM_ALIGN_SIZE];
+  static uint8_t static_heap[CH_CFG_MEMCORE_SIZE];
 
-  nextmem = (uint8_t *)&buffer[0];
-  endmem = (uint8_t *)&buffer[MEM_ALIGN_NEXT(CH_CFG_MEMCORE_SIZE) /
-                              MEM_ALIGN_SIZE];
+  ch_memcore.basemem = &static_heap[0];
+  ch_memcore.topmem  = &static_heap[CH_CFG_MEMCORE_SIZE];
 #endif
 }
 
 /**
- * @brief   Allocates a memory block.
- * @details The size of the returned block is aligned to the alignment
- *          type so it is not possible to allocate less
- *          than <code>MEM_ALIGN_SIZE</code>.
+ * @brief   Allocates a memory block starting from the lowest address upward.
+ * @details This function allocates a block of @p offset + @p size bytes. The
+ *          returned pointer has @p offset bytes before its address and
+ *          @p size bytes after.
  *
- * @param[in] size      the size of the block to be allocated
+ * @param[in] size      the size of the block to be allocated.
+ * @param[in] align     desired memory alignment
+ * @param[in] offset    aligned pointer offset
+ * @return              A pointer to the allocated memory block.
+ * @retval NULL         allocation failed, core memory exhausted.
+ *
+ * @iclass
+ */
+void *chCoreAllocFromBaseI(size_t size, unsigned align, size_t offset) {
+  uint8_t *p, *next;
+
+  chDbgCheckClassI();
+  chDbgCheck(MEM_IS_VALID_ALIGNMENT(align));
+
+  p = (uint8_t *)MEM_ALIGN_NEXT(ch_memcore.basemem + offset, align);
+  next = p + size;
+
+  /* Considering also the case where there is numeric overflow.*/
+  if ((next > ch_memcore.topmem) || (next < ch_memcore.basemem)) {
+    return NULL;
+  }
+
+  ch_memcore.basemem = next;
+
+  return p;
+}
+
+/**
+ * @brief   Allocates a memory block starting from the top address downward.
+ * @details This function allocates a block of @p offset + @p size bytes. The
+ *          returned pointer has @p offset bytes before its address and
+ *          @p size bytes after.
+ *
+ * @param[in] size      the size of the block to be allocated.
+ * @param[in] align     desired memory alignment
+ * @param[in] offset    aligned pointer offset
+ * @return              A pointer to the allocated memory block.
+ * @retval NULL         allocation failed, core memory exhausted.
+ *
+ * @iclass
+ */
+void *chCoreAllocFromTopI(size_t size, unsigned align, size_t offset) {
+  uint8_t *p, *prev;
+
+  chDbgCheckClassI();
+  chDbgCheck(MEM_IS_VALID_ALIGNMENT(align));
+
+  p = (uint8_t *)MEM_ALIGN_PREV(ch_memcore.topmem - size, align);
+  prev = p - offset;
+
+  /* Considering also the case where there is numeric overflow.*/
+  if ((prev < ch_memcore.basemem) || (prev > ch_memcore.topmem)) {
+    return NULL;
+  }
+
+  ch_memcore.topmem = prev;
+
+  return p;
+}
+
+/**
+ * @brief   Allocates a memory block starting from the lowest address upward.
+ * @details This function allocates a block of @p offset + @p size bytes. The
+ *          returned pointer has @p offset bytes before its address and
+ *          @p size bytes after.
+ *
+ * @param[in] size      the size of the block to be allocated.
+ * @param[in] align     desired memory alignment
+ * @param[in] offset    aligned pointer offset
  * @return              A pointer to the allocated memory block.
  * @retval NULL         allocation failed, core memory exhausted.
  *
  * @api
  */
-void *chCoreAlloc(size_t size) {
+void *chCoreAllocFromBase(size_t size, unsigned align, size_t offset) {
   void *p;
 
   chSysLock();
-  p = chCoreAllocI(size);
+  p = chCoreAllocFromBaseI(size, align, offset);
   chSysUnlock();
 
   return p;
 }
 
 /**
- * @brief   Allocates a memory block.
- * @details The size of the returned block is aligned to the alignment
- *          type so it is not possible to allocate less than
- *          <code>MEM_ALIGN_SIZE</code>.
+ * @brief   Allocates a memory block starting from the top address downward.
+ * @details This function allocates a block of @p offset + @p size bytes. The
+ *          returned pointer has @p offset bytes before its address and
+ *          @p size bytes after.
  *
  * @param[in] size      the size of the block to be allocated.
+ * @param[in] align     desired memory alignment
+ * @param[in] offset    aligned pointer offset
  * @return              A pointer to the allocated memory block.
  * @retval NULL         allocation failed, core memory exhausted.
  *
- * @iclass
+ * @api
  */
-void *chCoreAllocI(size_t size) {
+void *chCoreAllocFromTop(size_t size, unsigned align, size_t offset) {
   void *p;
 
-  chDbgCheckClassI();
-
-  size = MEM_ALIGN_NEXT(size);
-  /*lint -save -e9033 [10.8] The cast is safe.*/
-  if ((size_t)(endmem - nextmem) < size) {
-  /*lint -restore*/
-    return NULL;
-  }
-  p = nextmem;
-  nextmem += size;
+  chSysLock();
+  p = chCoreAllocFromTopI(size, align, offset);
+  chSysUnlock();
 
   return p;
 }
@@ -155,7 +219,7 @@ void *chCoreAllocI(size_t size) {
 size_t chCoreGetStatusX(void) {
 
   /*lint -save -e9033 [10.8] The cast is safe.*/
-  return (size_t)(endmem - nextmem);
+  return (size_t)(ch_memcore.topmem - ch_memcore.basemem);
   /*lint -restore*/
 }
 #endif /* CH_CFG_USE_MEMCORE == TRUE */

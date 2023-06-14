@@ -1,12 +1,12 @@
 /*
-    ChibiOS - Copyright (C) 2006..2015 Giovanni Di Sirio.
+    ChibiOS - Copyright (C) 2006,2007,2008,2009,2010,2011,2012,2013,2014,
+              2015,2016,2017,2018,2019,2020,2021 Giovanni Di Sirio.
 
     This file is part of ChibiOS.
 
     ChibiOS is free software; you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
-    the Free Software Foundation; either version 3 of the License, or
-    (at your option) any later version.
+    the Free Software Foundation version 3 of the License.
 
     ChibiOS is distributed in the hope that it will be useful,
     but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,12 +21,14 @@
  * @file    chlicense.h
  * @brief   License Module macros and structures.
  *
- * @addtogroup license
+ * @addtogroup chibios_license
+ * @details This module contains all the definitions required for defining
+ *          a licensing scheme for customers or public releases.
  * @{
  */
 
-#ifndef _CHLICENSE_H_
-#define _CHLICENSE_H_
+#ifndef CHLICENSE_H
+#define CHLICENSE_H
 
 /*===========================================================================*/
 /* Module constants.                                                         */
@@ -43,6 +45,7 @@
 
 /**
  * @name    Deployment Options
+ * @{
  */
 #define CH_DEPLOY_UNLIMITED                -1
 #define CH_DEPLOY_NONE                      0
@@ -55,28 +58,135 @@
 #define CH_LICENSE_GPL                      0
 #define CH_LICENSE_GPL_EXCEPTION            1
 #define CH_LICENSE_COMMERCIAL_FREE          2
-#define CH_LICENSE_COMMERCIAL_DEVELOPER     3
-#define CH_LICENSE_COMMERCIAL_FULL          4
-#define CH_LICENSE_PARTNER                  5
+#define CH_LICENSE_COMMERCIAL_DEV_1000      3
+#define CH_LICENSE_COMMERCIAL_DEV_5000      4
+#define CH_LICENSE_COMMERCIAL_FULL          5
+#define CH_LICENSE_COMMERCIAL_RUNTIME       6
+#define CH_LICENSE_PARTNER                  7
 /** @} */
+
+#include "chversion.h"
+#include "chcustomer.h"
+#if CH_LICENSE == CH_LICENSE_PARTNER
+#include "chpartner.h"
+#endif
+#if CH_LICENSE == CH_LICENSE_COMMERCIAL_RUNTIME
+#include "chruntime.h"
+#endif
 
 /*===========================================================================*/
 /* Module pre-compile time settings.                                         */
 /*===========================================================================*/
 
-/**
- * @brief   Current license.
- * @note    This setting is reserved to the copyright owner.
- * @note    Changing this setting invalidates the license.
- * @note    The license statement in the source headers is valid, applicable
- *          and binding regardless this setting.
- */
-#define CH_LICENSE                          CH_LICENSE_GPL
-
 /*===========================================================================*/
 /* Derived constants and error checks.                                       */
 /*===========================================================================*/
 
+/* Checks on chversion.h.*/
+#if !defined(__CHIBIOS__)
+  #error "__CHIBIOS__ not defined in chversion.h"
+#endif
+
+#if !defined(CH_VERSION_STABLE)
+  #error "CH_VERSION_STABLE not defined in chversion.h"
+#endif
+
+#if !defined(CH_VERSION_YEAR)
+  #error "CH_VERSION_YEAR not defined in chversion.h"
+#endif
+
+#if !defined(CH_VERSION_MONTH)
+  #error "CH_VERSION_MONTH not defined in chversion.h"
+#endif
+
+#if !defined(CH_VERSION_PATCH)
+  #error "CH_VERSION_PATCH not defined in chversion.h"
+#endif
+
+#if !defined(CH_VERSION_NICKNAME)
+  #error "CH_VERSION_NICKNAME not defined in chversion.h"
+#endif
+
+#if !defined(CH_VERSION_DATE)
+  #error "CH_VERSION_DATE not defined in chversion.h"
+#endif
+
+#if (CH_VERSION_STABLE < 0) || (CH_VERSION_STABLE > 1)
+  #error "invalid CH_VERSION_STABLE value in chversion.h"
+#endif
+
+#if (CH_VERSION_YEAR < 12) || (CH_VERSION_YEAR > 99)
+  #error "invalid CH_VERSION_YEAR value in chversion.h"
+#endif
+
+#if (CH_VERSION_MONTH < 1) || (CH_VERSION_MONTH > 12)
+  #error "invalid CH_VERSION_MONTH value in chversion.h"
+#endif
+
+#if (CH_VERSION_DATE < 201201) || (CH_VERSION_DATE > 209912)
+  #error "invalid CH_VERSION_DATE value in chversion.h"
+#endif
+
+/* Checks on chcustomer.h.*/
+#if !defined(CH_CUSTOMER_ID_STRING)
+#error "CH_CUSTOMER_ID_STRING not defined in chcustomer.h"
+#endif
+
+#if !defined(CH_CUSTOMER_ID_CODE)
+#error "CH_CUSTOMER_ID_CODE not defined in chcustomer.h"
+#endif
+
+#if !defined(CH_CUSTOMER_LICENSE_EOS_DATE)
+#error "CH_CUSTOMER_LICENSE_EOS_DATE not defined in chcustomer.h"
+#endif
+
+#if !defined(CH_CUSTOMER_LICENSE_VERSION_YEAR)
+#error "CH_CUSTOMER_LICENSE_VERSION_YEAR not defined in chcustomer.h"
+#endif
+
+#if !defined(CH_CUSTOMER_LICENSE_VERSION_MONTH)
+#error "CH_CUSTOMER_LICENSE_VERSION_MONTH not defined in chcustomer.h"
+#endif
+
+#if !defined(CH_CUSTOMER_LICENSE_VERSION_DATE)
+#error "CH_CUSTOMER_LICENSE_VERSION_DATE not defined in chcustomer.h"
+#endif
+
+#if !defined(CH_LICENSE)
+#error "CH_LICENSE not defined in chcustomer.h"
+#endif
+
+#if (CH_CUSTOMER_LICENSE_EOS_DATE < 201201) ||                              \
+    (CH_CUSTOMER_LICENSE_EOS_DATE > 209912)
+#error "invalid CH_CUSTOMER_LICENSE_EOS_DATE value in chcustomer.h"
+#endif
+
+#if (CH_CUSTOMER_LICENSE_VERSION_YEAR < 12) ||                              \
+    (CH_CUSTOMER_LICENSE_VERSION_YEAR > 99)
+#error "invalid CH_CUSTOMER_LICENSE_VERSION_YEAR value in chcustomer.h"
+#endif
+
+#if (CH_CUSTOMER_LICENSE_VERSION_MONTH < 1) ||                              \
+    (CH_CUSTOMER_LICENSE_VERSION_MONTH > 12)
+#error "invalid CH_CUSTOMER_LICENSE_VERSION_MONTH value in chcustomer.h"
+#endif
+
+#if (CH_CUSTOMER_LICENSE_VERSION_DATE < 201201) ||                          \
+    (CH_CUSTOMER_LICENSE_VERSION_DATE > 209912)
+  #error "invalid CH_CUSTOMER_LICENSE_VERSION_DATE value in chversion.h"
+#endif
+
+/* Checks on licensed versions.*/
+#if CH_VERSION_DATE > CH_CUSTOMER_LICENSE_VERSION_DATE
+#error "this ChibiOS version is newer than your license, see chcustomer.h"
+#endif
+
+/* Checks on end-of-support date.*/
+#if CH_VERSION_DATE > CH_CUSTOMER_LICENSE_EOS_DATE
+#error "this ChibiOS version is beyond your End-Of-Support date, see chcustomer.h"
+#endif
+
+/* Defaults for GPL license.*/
 #if (CH_LICENSE == CH_LICENSE_GPL) || defined(__DOXYGEN__)
 /**
  * @brief   License identification string.
@@ -105,26 +215,6 @@
 
 /**
  * @brief   Code functionality restrictions.
- * @details This setting defines which features are available under the
- *          current licensing scheme. The possible settings are:
- *          - @p CH_FEATURES_FULL if all features are available.
- *          - @p CH_FEATURES_INTERMEDIATE means that the following
- *            functionalities are disabled:
- *            - High Resolution mode.
- *            - Time Measurement.
- *            - Statistics.
- *            .
- *          - @p CH_FEATURES_BASIC means that the following functionalities
- *            are disabled:
- *            - High Resolution mode.
- *            - Time Measurement.
- *            - Statistics.
- *            - Tickless mode.
- *            - Recursive Mutexes.
- *            - Condition Variables.
- *            - Dynamic threading.
- *            .
- *          .
  */
 #define CH_LICENSE_FEATURES                 CH_FEATURES_FULL
 
@@ -144,16 +234,23 @@
 #define CH_LICENSE_MAX_DEPLOY               CH_DEPLOY_UNLIMITED
 
 #elif CH_LICENSE == CH_LICENSE_COMMERCIAL_FREE
-#define CH_LICENSE_TYPE_STRING              "Zero Cost Registered License"
+#define CH_LICENSE_TYPE_STRING              "Zero Cost Registered License for 500 Cores"
 #define CH_LICENSE_ID_STRING                "N/A"
-#define CH_LICENSE_ID_CODE                  "2015-0000"
+#define CH_LICENSE_ID_CODE                  "2017-0000"
 #define CH_LICENSE_MODIFIABLE_CODE          FALSE
 #define CH_LICENSE_FEATURES                 CH_FEATURES_INTERMEDIATE
 #define CH_LICENSE_MAX_DEPLOY               500
 
-#elif CH_LICENSE == CH_LICENSE_COMMERCIAL_DEVELOPER
-#include "chcustomer.h"
-#define CH_LICENSE_TYPE_STRING              "Developer-Only Commercial License"
+#elif CH_LICENSE == CH_LICENSE_COMMERCIAL_DEV_1000
+#define CH_LICENSE_TYPE_STRING              "Developer Commercial License for 1000 Cores"
+#define CH_LICENSE_ID_STRING                CH_CUSTOMER_ID_STRING
+#define CH_LICENSE_ID_CODE                  CH_CUSTOMER_ID_CODE
+#define CH_LICENSE_MODIFIABLE_CODE          TRUE
+#define CH_LICENSE_FEATURES                 CH_FEATURES_FULL
+#define CH_LICENSE_DEPLOY_LIMIT             1000
+
+#elif CH_LICENSE == CH_LICENSE_COMMERCIAL_DEV_5000
+#define CH_LICENSE_TYPE_STRING              "Developer Commercial License for 5000 Cores"
 #define CH_LICENSE_ID_STRING                CH_CUSTOMER_ID_STRING
 #define CH_LICENSE_ID_CODE                  CH_CUSTOMER_ID_CODE
 #define CH_LICENSE_MODIFIABLE_CODE          TRUE
@@ -161,67 +258,31 @@
 #define CH_LICENSE_DEPLOY_LIMIT             5000
 
 #elif CH_LICENSE == CH_LICENSE_COMMERCIAL_FULL
-#include "chcustomer.h"
-#define CH_LICENSE_TYPE_STRING              "Full Commercial License"
+#define CH_LICENSE_TYPE_STRING              "Full Commercial License for Unlimited Deployment"
 #define CH_LICENSE_ID_STRING                CH_CUSTOMER_ID_STRING
 #define CH_LICENSE_ID_CODE                  CH_CUSTOMER_ID_CODE
 #define CH_LICENSE_MODIFIABLE_CODE          TRUE
 #define CH_LICENSE_FEATURES                 CH_FEATURES_FULL
 #define CH_LICENSE_MAX_DEPLOY               CH_DEPLOY_UNLIMITED
 
+#elif CH_LICENSE == CH_LICENSE_COMMERCIAL_RUNTIME
+#define CH_LICENSE_TYPE_STRING              "Runtime Commercial License"
+#define CH_LICENSE_ID_STRING                CH_CUSTOMER_ID_STRING
+#define CH_LICENSE_ID_CODE                  CH_CUSTOMER_ID_CODE
+#define CH_LICENSE_MODIFIABLE_CODE          TRUE
+#define CH_LICENSE_FEATURES                 CH_FEATURES_FULL
+#define CH_LICENSE_MAX_DEPLOY               CH_RUNTIME_MAX_DEPLOY
+
 #elif CH_LICENSE == CH_LICENSE_PARTNER
-#include "chpartner.h"
 #define CH_LICENSE_TYPE_STRING              "Partners Special Commercial License"
-#define CH_LICENSE_ID_STRING                CH_PARTNER_ID_STRING
-#define CH_LICENSE_ID_CODE                  CH_PARTNER_ID_CODE
+#define CH_LICENSE_ID_STRING                CH_CUSTOMER_ID_STRING
+#define CH_LICENSE_ID_CODE                  CH_CUSTOMER_ID_CODE
 #define CH_LICENSE_MODIFIABLE_CODE          CH_PARTNER_MODIFIABLE_CODE
-#define CH_LICENSE_FEATURES                 CH_PARTNER_FEATURES_FULL
+#define CH_LICENSE_FEATURES                 CH_PARTNER_FEATURES
 #define CH_LICENSE_MAX_DEPLOY               CH_PARTNER_MAX_DEPLOY
 
 #else
 #error "invalid licensing option"
-#endif
-
-/* Checks on the enabled features.*/
-#if CH_LICENSE_FEATURES == CH_FEATURES_FULL
-  /* No restrictions in full mode.*/
-
-#elif (CH_LICENSE_FEATURES == CH_FEATURES_INTERMEDIATE) ||                  \
-      (CH_LICENSE_FEATURES == CH_FEATURES_BASIC)
-  /* Restrictions in basic and intermediate modes.*/
-  #if CH_CFG_ST_TIMEDELTA > 2
-    #error "CH_CFG_ST_TIMEDELTA > 2, High Resolution Time functionality restricted"
-  #endif
-
-  #if CH_DBG_STATISTICS == TRUE
-    #error "CH_DBG_STATISTICS == TRUE, Statistics functionality restricted"
-  #endif
-
-  #if CH_LICENSE_FEATURES == CH_FEATURES_BASIC
-    /* Restrictions in basic mode.*/
-    #if CH_CFG_ST_TIMEDELTA > 0
-      #error "CH_CFG_ST_TIMEDELTA > 0, Tick-Less functionality restricted"
-    #endif
-
-    #if CH_CFG_USE_TM == TRUE
-      #error "CH_CFG_USE_TM == TRUE, Time Measurement functionality restricted"
-    #endif
-
-    #if CH_CFG_USE_MUTEXES_RECURSIVE == TRUE
-      #error "CH_CFG_USE_MUTEXES_RECURSIVE == TRUE, Recursive Mutexes functionality restricted"
-    #endif
-
-    #if CH_CFG_USE_CONDVARS == TRUE
-      #error "CH_CFG_USE_CONDVARS == TRUE, Condition Variables functionality restricted"
-    #endif
-
-    #if CH_CFG_USE_DYNAMIC == TRUE
-      #error "CH_CFG_USE_DYNAMIC == TRUE, Dynamic Threads functionality restricted"
-    #endif
-  #endif /* CH_LICENSE_FEATURES == CH_FEATURES_BASIC */
-
-#else
-  #error "invalid feature settings"
 #endif
 
 /*===========================================================================*/
@@ -240,6 +301,6 @@
 /* Module inline functions.                                                  */
 /*===========================================================================*/
 
-#endif /* _CHLICENSE_H_ */
+#endif /* CHLICENSE_H */
 
 /** @} */
