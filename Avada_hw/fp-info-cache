@@ -1,4 +1,4 @@
-823995331099796
+819705720874619
 Antennas
 ANT_868_10d4x36
 PCB 75.7x37.5, AntPcb 14.8mm
@@ -112,13 +112,6 @@ ANT_868_Spear
 1
 1
 Antennas
-ANT_868_Spear_inverted
-
-
-0
-1
-1
-Antennas
 ANT_2400_MEANDER
 
 
@@ -168,6 +161,13 @@ ANT_YAGEO12x4
 2
 2
 Antennas
+Candelabra
+
+
+0
+2
+2
+Antennas
 Firefly_868
 
 
@@ -188,13 +188,6 @@ Flute_868
 0
 0
 0
-Antennas
-Flute_868_inverted
-
-
-0
-1
-1
 Antennas
 IFA_LoRa_BEST
 
@@ -217,6 +210,13 @@ LcktSnd_868
 1
 1
 Antennas
+Lipte2
+
+
+0
+2
+2
+Antennas
 Locket5
 
 
@@ -231,6 +231,13 @@ Locket5_MIRR
 2
 2
 Antennas
+LocketNFC
+
+
+0
+2
+2
+Antennas
 MagicStick
 
 
@@ -238,40 +245,12 @@ MagicStick
 1
 1
 Antennas
-try
+Tirusse868
 
 
 0
-0
-0
-BGA
-BGA-153_14x14_11.5x13.0mm
-
-
-0
-153
-153
-BGA
-BGA-294_21x14_12.0x7.5mm
-
-
-0
-167
-167
-BGA
-BGA-529_23x23_15.0x15.0mm
-
-
-0
-396
-396
-BGA
-BGA176+25_15x15_0.65pitch_10x10mm
-
-
-0
-201
-201
+2
+2
 BtnsSwitches
 BTN_4PIN_12mm
 
@@ -638,6 +617,13 @@ CAP_0603_Silks
 2
 Capacitors
 CAP_0603_large
+
+
+0
+2
+2
+Capacitors
+CAP_0603_sm
 
 
 0
@@ -1365,6 +1351,13 @@ USBC_10PF-074
 16
 13
 Connectors
+USBC_24PF-009
+
+
+0
+28
+28
+Connectors
 USB_AM_PCB
 
 
@@ -1560,20 +1553,6 @@ uUSB_Micro5P
 0
 7
 7
-DIP
-DIP-8_296_ELL
-
-
-0
-8
-8
-DIP
-DIP-16_296_ELL
-
-
-0
-16
-16
 Diodes
 DFN1006
 
@@ -1630,20 +1609,6 @@ SOD923
 0
 2
 2
-Display
-7Segx4
-
-
-0
-36
-36
-Display
-Round2_2
-
-
-0
-30
-30
 FFC
 Conn_0d5x8
 
@@ -1778,6 +1743,13 @@ IND_SRN3015
 2
 2
 Inductors
+NR6028
+
+
+0
+2
+2
+Inductors
 SDR0604
 
 
@@ -1883,6 +1855,20 @@ BAT_HOLDER_3xAA
 2
 2
 Installation
+BAT_HOLDER_3xAA_CANDELABRA
+
+
+0
+10
+10
+Installation
+BAT_HOLDER_3xAA_PRINTED
+
+
+0
+6
+6
+Installation
 BAT_HOLDER_4xAAA
 
 
@@ -1953,6 +1939,13 @@ ENCODER_EC110402M2F
 11
 6
 Installation
+KL_18650x1
+
+
+0
+2
+2
+Installation
 Keystone_1042_1x18650
 Battery holder for 18650 cylindrical cells http://www.keyelco.com/product.cfm/product_id/918
 18650 Keystone 1042 Li-ion
@@ -1978,8 +1971,8 @@ MICROSD_EJECTOR_TFWF1
 
 
 0
-15
-11
+13
+10
 Installation
 MOTOR_KHN4NX
 
@@ -2107,6 +2100,13 @@ LED_1206
 2
 2
 LEDs
+LED_2020_WS2812
+
+
+0
+4
+4
+LEDs
 LED_5050
 
 
@@ -2197,6 +2197,13 @@ CREE XP-E LED
 0
 3
 3
+LEDs
+OT-15RGBWY
+
+
+0
+11
+11
 LEDs
 RF_W3S198TS_A41
 
@@ -2330,76 +2337,6 @@ TQFP-32_7x7_Pitch0.8mm
 0
 32
 32
-Modules
-BK8000L_F-6188
-
-f6188, f-6188, bk8000l
-0
-32
-32
-Modules
-BT_HC0x
-
-
-0
-34
-34
-Modules
-ESP32WROOM32
-
-
-0
-39
-39
-Modules
-ESP8266PCB
-
-
-0
-30
-30
-Modules
-F3188
-
-
-0
-43
-43
-Modules
-JDY-08
-
-JDY-08 BLE
-0
-24
-24
-Modules
-JDY-08_HandSoldering
-
-JDY-08 BLE
-0
-24
-24
-Modules
-SL3333
-
-
-0
-24
-24
-Modules
-SOM_A113_v1
-
-
-0
-41
-37
-Modules
-ST_SPBT30
-
-
-0
-18
-18
 PCB
 2Holes2_5x1_4_D508
 
@@ -2456,6 +2393,13 @@ Hole2d2_out3d5mm
 0
 1
 1
+PCB
+Hole2d2_out4_NoMetal
+
+
+0
+0
+0
 PCB
 Hole2d4_out4d4mm
 
@@ -2570,6 +2514,13 @@ HoleNM3d3_out5d5mm
 0
 PCB
 HoleRnd1_4x3
+
+
+0
+1
+1
+PCB
+OSCIL_GND
 
 
 0
@@ -3094,6 +3045,13 @@ QFN16_0d65
 20
 17
 QFN_DFN
+QFN16_0d65_EP2d7
+
+
+0
+25
+17
+QFN_DFN
 QFN16_4x4_H
 Quad Flat, No pins, Exposed pad
 
@@ -3352,6 +3310,13 @@ RES_0603_SOLDERFUSE_x2
 0
 3
 3
+Resistors
+RES_0603_sm
+
+
+0
+2
+2
 Resistors
 RES_0805
 
