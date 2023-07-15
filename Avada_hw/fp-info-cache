@@ -1,4 +1,4 @@
-819705720874619
+821739753512198
 Antennas
 ANT_868_10d4x36
 PCB 75.7x37.5, AntPcb 14.8mm
@@ -534,6 +534,13 @@ Polarized capacitor 08R 3.5F
 Capacitors
 CAP_08xxR_HOR
 Polarized capacitor 08R, horizontal mount
+
+0
+2
+2
+Capacitors
+CAP_08xxR_MIRR
+Polarized capacitor 08R 3.5F
 
 0
 2
@@ -1349,7 +1356,7 @@ USBC_10PF-074
 
 0
 16
-13
+16
 Connectors
 USBC_24PF-009
 

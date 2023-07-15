@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--*************************************-->
+<!--   File    : Avada.fsproj            -->
+<!--   Format  : TopoR Project file      -->
+<!--   Version : 2                       -->
+<!--   Program : TopoR Lite 7.0.18707    -->
+<!--   Date    : Saturday, July 15, 2023 -->
+<!--   Time    : 21:42                   -->
+<!--*************************************-->
+
+<Project>
+   <Version current="2"/>
+   <GUID>{A6E5DAC4-DCF6-4D03-B946-62636603EB0F}</GUID>
+   <Documents>
+      <Section name="PCB" isExpanded="true">
+         <File path=".\Avada.fsx" isopened="1" dateChange="2023-07-15 14:59:37"/>
+      </Section>
+      <Section name="AutoRouting" isExpanded="false"/>
+   </Documents>
+</Project>
