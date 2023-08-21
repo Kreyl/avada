@@ -8,7 +8,7 @@
 #pragma once
 
 // ==== General ====
-#define BOARD_NAME          "Avada5"
+#define BOARD_NAME          "Avada6"
 #define APP_NAME            "Avada"
 
 // MCU type as defined in the ST header.
@@ -20,16 +20,13 @@
 // Ch timer
 #define STM32_ST_IRQ_PRIORITY   2
 #define STM32_ST_USE_TIMER      2
-#define STM32_TIMCLK1           (Clk.APBFreqHz)
+#define SYS_TIM_CLK             (Clk.APBFreqHz)
 
 #define SIMPLESENSORS_ENABLED   TRUE
-#define BUTTONS_ENABLED         TRUE
-#define ADC_REQUIRED            TRUE
+#define BUTTONS_ENABLED         FALSE
+#define ADC_REQUIRED            FALSE
 #define I2C1_ENABLED            FALSE
 #define I2C_USE_SEMAPHORE       FALSE
-
-// ADC timer
-#define ADC_TIM                 TIM1
 
 #if 1 // ========================== GPIO =======================================
 // PortMinTim_t: GPIO, Pin, Tim, TimChnl, invInverted, omPushPull, TopValue
@@ -38,11 +35,8 @@
 #define BTN_PIN         GPIOA, 0, pudPullDown
 
 // LEDs
-#define INFO_LED        GPIOB, 14, omPushPull
+#define LUMOS_PIN       { GPIOB, 14, TIM15, 1, invNotInverted, omPushPull, 255 }
 #define GREEN_LED       GPIOA, 4
-
-// Measurement
-#define LED_CURR_PIN    GPIOA, 3, 3 // PA3, ADC channel 3
 
 // Battery
 #define IS_CHARGING     GPIOC, 5, pudPullUp
@@ -82,11 +76,6 @@
 #define UART_DMA_TX     STM32_DMA_STREAM_ID(1, 2)
 #define UART_DMA_RX     STM32_DMA_STREAM_ID(1, 3)
 #define UART_DMA_CHNL   0   // Dummy
-
-
-#define LCD_DMA         STM32_DMA_STREAM_ID(1, 7)  // USART3 TX
-
-#define LEDWS_DMA       STM32_DMA_STREAM_ID(1, 5)  // SPI2 TX
 
 #if ADC_REQUIRED
 #define ADC_DMA         STM32_DMA_STREAM_ID(1, 1)

@@ -519,7 +519,7 @@ void CmdUart_t::OnUartIrqI(uint32_t flags) {
 uint8_t CmdUart_t::ReceiveBinaryToBuf(uint8_t *ptr, uint32_t Len, uint32_t Timeout_ms) {
     uint8_t Rslt = retvOk;
     // Wait for previous TX to complete
-    while(!IDmaIsIdle);
+    FlushTx();
     while(!(Params->Uart->ISR & USART_ISR_TXE)); // Wait
     Params->Uart->CR1 &= ~USART_CR1_CMIE; // Disable IRQ on char match
     // Setup DMA to given buffer

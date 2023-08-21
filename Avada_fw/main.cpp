@@ -23,43 +23,39 @@ CmdUart_t Uart{CmdUartParams};
 void OnCmd(Shell_t *PShell);
 void ITask();
 
-LedBlinker_t InfoLed{INFO_LED};
 FATFS FlashFS;
-bool UsbIsConnected = false;
-bool IsCharging = false;
 Settings_t Settings;
-#endif
+bool UsbIsConnected = false, IsCharging = false;
+LedSmooth_t Lumos(LUMOS_PIN);
 
-#if 1 // ==== ADC ====
-void OnAdcDoneI() {
-    AdcBuf_t &FBuf = Adc.GetBuf();
-    // Calculate averaged value
-    uint32_t N = FBuf.size() / 2; // As 2 channels used
-    uint32_t VRef=0, VRAdc=0;
-    uint16_t *p = FBuf.data();
-    for(uint32_t i=0; i<N; i++) {
-        VRef += *p++;
-        VRAdc += *p++;
+// ==== Button ====
+void ButtonIrqHandlerI();
+
+class InputIrq_t : public PinIrq_t {
+private:
+    systime_t IFrontTime = 0;
+    const sysinterval_t IDeadtime = 0;
+public:
+    InputIrq_t(GPIO_TypeDef *APGpio, uint16_t APinN, PinPullUpDown_t APullUpDown,
+            const sysinterval_t ADeadtime) :
+        PinIrq_t(APGpio, APinN, APullUpDown, ButtonIrqHandlerI), IDeadtime(ADeadtime) {}
+    void Init(ExtiTrigType_t ATriggerType) {
+        PinIrq_t::Init(ATriggerType);
+        CleanIrqFlag();
+        EnableIrq(IRQ_PRIO_LOW);
     }
-    VRef = VRef >> 4;
-    VRAdc = VRAdc >> 4;
-    // Calc current
-    uint32_t ILed = (((10 * ADC_VREFINT_CAL_mV * (uint32_t)ADC_VREFINT_CAL) / ADC_MAX_VALUE) * VRAdc) / VRef;
-    GreenFlash::AdjustCurrent(ILed);
-}
-
-const AdcSetup_t AdcSetup = {
-        .SampleTime = ast55d5Cycles,
-        .Oversampling = AdcSetup_t::oversmp8,
-        .DoneCallback = OnAdcDoneI,
-        .Channels = {
-                {LED_CURR_PIN},
-                {nullptr, 0, ADC_VREFINT_CHNL}
-        }
+    bool CheckIfProcessI() { return chVTTimeElapsedSinceX(IFrontTime) >= IDeadtime; }
 };
+
+InputIrq_t Btn{BTN_PIN, TIME_MS2I(99)};
+
+void ButtonIrqHandlerI() {
+    uint32_t Flags = EXTI->PR;
+    if(Btn.CheckIfProcessI()) EvtQMain.SendNowOrExitI(EvtMsg_t(evtIdButtons));
+}
 #endif
 
-int main(void) {
+void main() {
     // ==== Init Clock system ====
     Clk.EnablePrefetch();
     Clk.UpdateFreqValues();
@@ -74,17 +70,16 @@ int main(void) {
     Printf("\r%S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
     Clk.PrintFreqs();
 
-    InfoLed.Init();
+    Lumos.Init();
 
     // Init filesystem
-    if(f_mount(&FlashFS, "", 0) == FR_OK) {
-        if(Settings.Load() != retvOk) InfoLed.StartOrRestart(lbsqBlink3);
-    }
-    else Printf("FS error\r");
+    if(f_mount(&FlashFS, "", 0) == FR_OK and Settings.Load() == retvOk) Lumos.StartOrRestart(lsqSmoothStart);
+    else Lumos.StartOrRestart(lsqBlink3);
+    Settings.Print();
 
     Buzzer.Init();
-    Adc.Init();
     GreenFlash::Init();
+    Btn.Init(ttRising);
 
     UsbMsd.Init();
     SimpleSensors::Init();
@@ -97,7 +92,6 @@ __noreturn
 void ITask() {
     while(true) {
         EvtMsg_t Msg = EvtQMain.Fetch(TIME_INFINITE);
-//        Printf("%u\r", Msg.ID);
         switch(Msg.ID) {
             case evtIdShellCmdRcvd:
                 while(((CmdUart_t*)Msg.Ptr)->TryParseRxBuff() == retvOk) OnCmd((Shell_t*)((CmdUart_t*)Msg.Ptr));
@@ -139,8 +133,8 @@ void ITask() {
                 }
                 else Printf("Hsi Fail\r");
                 Printf("USB disconnect\r");
-                if(Settings.Load() == retvOk) InfoLed.StartOrRestart(lbsqOk);
-                else InfoLed.StartOrRestart(lbsqBlink3);
+                if(Settings.Load() == retvOk) Lumos.StartOrRestart(lsqSmoothStart);
+                else Lumos.StartOrRestart(lsqBlink3);
             } break;
 
             case evtIdUsbReady:
@@ -165,10 +159,13 @@ void ProcessUsbDetect(PinSnsState_t *PState, uint32_t Len) {
 }
 
 void ProcessCharging(PinSnsState_t *PState, uint32_t Len) {
-    if(*PState == pssLo) InfoLed.StartOrContinue(lbsqCharging);
-    else if(*PState == pssHi) { // Charge stopped
-        if(UsbIsConnected) InfoLed.StartOrContinue(lbsqChargingDone);
-        else               InfoLed.Stop();
+    if(*PState == pssLo and !IsCharging) {
+        IsCharging = true;
+        Lumos.StartOrRestart(lsqCharging);
+    }
+    else if(*PState == pssHi and IsCharging) { // Charge stopped
+        IsCharging = false;
+        if(UsbIsConnected) Lumos.StartOrRestart(lsqChargingDone);
     }
 }
 
@@ -177,16 +174,16 @@ void OnCmd(Shell_t *PShell) {
 //    Printf("%S\r", PCmd->Name);
     // Handle command
     if(PCmd->NameIs("Ping")) PShell->Ok();
+    else if(PCmd->NameIs("Version")) PShell->Print("Version: %S %S\r", APP_NAME, XSTRINGIFY(BUILD_TIME));
 
     else if(PCmd->NameIs("Btn")) {
         EvtQMain.SendNowOrExit(EvtMsg_t(evtIdButtons));
         PShell->Ok();
     }
-    else if(PCmd->NameIs("Off")) {
+//    else if(PCmd->NameIs("Off")) {
 //        GreenFlash.LedOff();
-//        Adc.Stop();
-        PShell->Ok();
-    }
+//        PShell->Ok();
+//    }
 
     else PShell->CmdUnknown();
 }

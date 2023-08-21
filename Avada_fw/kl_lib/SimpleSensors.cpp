@@ -1,7 +1,7 @@
 /*
  * SimpleSensors.cpp
  *
- *  Created on: 17 џэт. 2015 у.
+ *  Created on: 17 Jan 2015
  *      Author: Kreyl
  */
 

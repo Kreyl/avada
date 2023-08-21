@@ -46,7 +46,7 @@ void Buzz_t::BuzzUp() {
 
 void Buzz_t::BeReady() {
     chVTReset(&ITmr);
-    IChnl.SetTopValue(PERIOD_MIN);
+    IChnl.SetTopValue(PERIOD_MIN); // Highest freq
 }
 
 void Buzz_t::BeWaitingRestart() {

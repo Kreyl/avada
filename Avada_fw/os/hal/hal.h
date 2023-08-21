@@ -329,7 +329,7 @@ static inline halfreq_t halClockGetPointX(halclkpt_t clkpt) {
 
 /* Complex drivers.*/
 //#include "hal_mmc_spi.h"
-//#include "hal_serial_usb.h"
+#include "hal_serial_usb.h"
 
 /* Community drivers.*/
 #if defined(HAL_USE_COMMUNITY) || defined(__DOXYGEN__)

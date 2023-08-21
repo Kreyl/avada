@@ -233,7 +233,7 @@ const LedRGBChunk_t lsqFailure[] = {
 //};
 #endif
 
-#if 1 // ======================== Simple LED blink =============================
+#if 0 // ======================== Simple LED blink =============================
 #define BLINK_DELAY_MS      180
 const BaseChunk_t lbsqOk[] = {
         {csSetup, 1},
@@ -265,91 +265,36 @@ const BaseChunk_t lbsqChargingDone[] = {
 };
 #endif
 
-#if 0 // =========================== LED Smooth ================================
+#if 1 // =========================== LED Smooth ================================
 #define LED_TOP_BRIGHTNESS  255
+#define BLINK_DELAY_MS      180
 
 const LedSmoothChunk_t lsqSmoothStart[] = {
         {csSetup, 207, LED_TOP_BRIGHTNESS},
-        {csSetup, 207, 0},
+        {csSetup, 207, 1},
         {csEnd}
 };
 
-const LedSmoothChunk_t lsqSmoothPrepare[] = {
-        {csSetup, 207, LED_TOP_BRIGHTNESS},
-        {csSetup, 207, 4},
+const LedSmoothChunk_t lsqBlink3[] = {
+        {csSetup, 0, LED_TOP_BRIGHTNESS},
+        {csWait, BLINK_DELAY_MS},
+        {csSetup, 0, 0},
+        {csWait, BLINK_DELAY_MS},
+        {csRepeat, 3},
+        {csSetup, 0, 1},
+        {csEnd}
+};
+
+const LedSmoothChunk_t lsqCharging[] = {
+        {csSetup, 360, LED_TOP_BRIGHTNESS},
+        {csSetup, 360, 1},
         {csGoto, 0}
 };
 
-const LedSmoothChunk_t lsqSmoothReload[] = {
-        {csSetup, 0, 54},
-        {csWait, 99},
-        {csSetup, 0, 4},
-        {csWait, 99},
-        {csGoto, 0}
-};
-
-const LedSmoothChunk_t lsqSmoothHit[] = {
-        {csSetup, 0, LED_TOP_BRIGHTNESS},
-        {csWait, 99},
-        {csSetup, 0, 0},
-        {csWait, 360},
-        {csEnd}
-};
-
-const LedSmoothChunk_t lsqSmoothDamaged[] = {
-        {csSetup, 0, 108},
-        {csEnd}
-};
-
-const LedSmoothChunk_t lsqFire[] = {
-        {csSetup, 0, LED_TOP_BRIGHTNESS},
-        {csWait, 99},
-        {csSetup, 54, 0},
-        {csEnd}
-};
-
-const LedSmoothChunk_t lsqDamageEndOff[] = {
-        {csSetup, 0, LED_TOP_BRIGHTNESS},
-        {csWait, 99},
-        {csSetup, 180, 0},
-        {csEnd}
-};
-
-const LedSmoothChunk_t lsqDamageEndLow[] = {
-        {csSetup, 0, 0},
-        {csWait, 99},
-        {csSetup, 0, LED_TOP_BRIGHTNESS},
-        {csWait, 99},
-        {csSetup, 180, 90},
-        {csEnd}
-};
-
-const LedSmoothChunk_t lsqSteady[] = {
+const LedSmoothChunk_t lsqChargingDone[] = {
         {csSetup, 0, LED_TOP_BRIGHTNESS},
         {csEnd}
 };
-const LedSmoothChunk_t lsqSteadyLow[] = {
-        {csSetup, 0, 18},
-        {csEnd}
-};
-const LedSmoothChunk_t lsqOff[] = {
-        {csSetup, 0, 0},
-        {csEnd}
-};
-
-//const LedSmoothChunk_t lsqFadeOut[] = {
-//        {csSetup, 630, 0},
-//        {csEnd}
-//};
-//const LedSmoothChunk_t lsqEnterActive[] = {
-//        {csSetup, 0, LED_TOP_BRIGHTNESS},
-//        {csEnd}
-//};
-//const LedSmoothChunk_t lsqEnterIdle[] = {
-//        {csSetup, 360, 0},
-//        {csEnd}
-//};
-
 #endif
 
 #if 0 // ============================= Beeper ==================================
