@@ -28,6 +28,11 @@ Settings_t Settings;
 bool UsbIsConnected = false, IsCharging = false;
 LedSmooth_t Lumos(LUMOS_PIN);
 
+static void EnterSleepNow();
+static void EnterSleep();
+bool IsEnteringSleep = false;
+static TmrKL_t SleepTmr {999, evtIdTimeToSleep, tktOneShot}; // Delay is dummy
+
 // ==== Button ====
 void ButtonIrqHandlerI();
 
@@ -77,6 +82,9 @@ void main() {
     else Lumos.StartOrRestart(lsqBlink3);
     Settings.Print();
 
+    // Start sleep timer if enabled
+    if(Settings.SleepTimeout != 0) SleepTmr.StartOrRestart(TIME_S2I(Settings.SleepTimeout));
+
     Buzzer.Init();
     GreenFlash::Init();
     Btn.Init(ttRising);
@@ -100,6 +108,8 @@ void ITask() {
             case evtIdButtons:  GreenFlash::OnBtnPress(); break;
             case evtIdDelayEnd: GreenFlash::OnDelayEnd(); break;
 
+            case evtIdTimeToSleep: EnterSleep(); break;
+
 #if 1       // ======= USB =======
             case evtIdUsbConnect:
                 Printf("USB connect\r");
@@ -116,6 +126,7 @@ void ITask() {
                 Clk.SelectUSBClock_HSI48();
                 Clk.EnableCRS();
                 UsbMsd.Connect();
+                SleepTmr.Stop();
                 break;
 
             case evtIdUsbDisconnect: {
@@ -132,8 +143,8 @@ void ITask() {
                 }
                 else Printf("Hsi Fail\r");
                 Printf("USB disconnect\r");
-                if(Settings.Load() == retvOk) Lumos.StartOrRestart(lsqSmoothStart);
-                else Lumos.StartOrRestart(lsqBlink3);
+                if(Settings.SleepTimeout != 0)
+                    SleepTmr.StartOrRestart(TIME_S2I(Settings.SleepTimeout));
             } break;
 
             case evtIdUsbReady:
@@ -166,6 +177,19 @@ void ProcessCharging(PinSnsState_t *PState, uint32_t Len) {
         IsCharging = false;
         if(UsbIsConnected) Lumos.StartOrRestart(lsqChargingDone);
     }
+}
+
+void EnterSleep() {
+    Printf("Entering sleep\r");
+    chThdSleepMilliseconds(45);
+    chSysLock();
+    EnterSleepNow();
+    chSysUnlock();
+}
+
+void EnterSleepNow() {
+    Sleep::EnableWakeup1Pin(); // Btn
+    Sleep::EnterStandby();
 }
 
 void OnCmd(Shell_t *PShell) {
