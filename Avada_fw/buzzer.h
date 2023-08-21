@@ -32,7 +32,7 @@ public:
     }
     void SetVolume(uint16_t AVolume) { IChnl.Set(AVolume * 2); } // [0; 100] -> [0; 200]
 
-    void BuzzUp();
+    void BuzzUp(uint32_t ADelay);
     void BeReady();
     void BeWaitingRestart();
     void Off();

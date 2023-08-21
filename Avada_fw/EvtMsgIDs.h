@@ -15,7 +15,6 @@ enum EvtMsgId_t {
 
     evtIdButtons,
     evtIdDelayEnd,
-    evtIdFlashEnd,
 
     // Usb
     evtIdUsbConnect,

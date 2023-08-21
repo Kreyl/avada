@@ -43,8 +43,8 @@ public:
     }
 
     void Print() {
-        Printf("%*S = %3u; Min = %3u; Max = %3u; Default = %3u\r\n",
-            13, Name, Value, Min, Max, Default);
+        Printf("%*S %*S = %3u; Min = %3u; Max = %3u; Default = %3u\r\n",
+            14, Section, 13, Name, Value, Min, Max, Default);
     }
 };
 
@@ -54,27 +54,23 @@ public:
 #define VALUE(name, section_name, min, max, defval) \
         ValueU32_t name {XVNAME(name), XVNAME(section_name), min, max, defval}
 
+#define STATE(Name, DurDef, VolumeDef) \
+    struct { \
+        VALUE(Duration, Name, 0,   9, DurDef); \
+        VALUE(Volume,   Name, 0, 100, VolumeDef); \
+    } Name
+
+// Delays in seconds
 class Settings_t {
 public:
     VALUE(FlashDurtn_ms, Common, 27, 999, 153);
-    // Mode after fire: 0 is restart, 1 is ready
-    VALUE(ModeAfterFire,    Common,  0,   1,   0);
-    // Sound Volumes
-    struct Volume_t {
-        VALUE(Charging,      Volume, 0, 100, 12);
-        VALUE(Ready,         Volume, 0, 100, 18);
-        VALUE(WaitingBtn,    Volume, 0, 100, 27);
-        VALUE(BeforeFlash,   Volume, 0, 100, 36);
-        VALUE(BeforeRestart, Volume, 0, 100,  9);
-    } Volume;
-    // Delays in seconds
-    struct Delay_t {
-        VALUE(Start2Ready,   Delay, 0, 9, 4);
-        VALUE(Ready2Press,   Delay, 0, 9, 0);
-        VALUE(BeforeFlash,   Delay, 0, 9, 0);
-        VALUE(OffIfNotFired, Delay, 0, 9, 0);
-        VALUE(BeforeRestart, Delay, 0, 9, 0);
-    } Delay;
+    VALUE(SleepTimeout,  Common, 0, 999999, 0);
+    // States: Name, DurDef, VolumeDef
+    STATE(Charging,       4, 12);
+    STATE(IgnoringBtn,    0, 18);
+    STATE(WaitingBtn,     0, 27);
+    STATE(WaitingFlash,   0, 45);
+    STATE(WaitingRestart, 0,  9);
 
     uint8_t Load() {
         if(ini::OpenFile(SETTINGS_FILENAME, &CommonFile) != retvOk) return retvFail;

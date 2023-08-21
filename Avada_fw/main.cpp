@@ -99,7 +99,6 @@ void ITask() {
 
             case evtIdButtons:  GreenFlash::OnBtnPress(); break;
             case evtIdDelayEnd: GreenFlash::OnDelayEnd(); break;
-            case evtIdFlashEnd: GreenFlash::OnFlashEnd(); break;
 
 #if 1       // ======= USB =======
             case evtIdUsbConnect:

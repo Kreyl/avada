@@ -7,7 +7,6 @@
 
 #include "buzzer.h"
 #include "board.h"
-#include "Settings.h"
 #include "MsgQ.h"
 
 Buzz_t Buzzer(BUZZER_PIN);
@@ -36,10 +35,10 @@ void Buzz_t::ITmrCallbackI() {
     else EvtQMain.SendNowOrExitI(EvtMsg_t(evtIdDelayEnd));
 }
 
-void Buzz_t::BuzzUp() {
+void Buzz_t::BuzzUp(uint32_t ADelay) {
     IPeriod = PERIOD_MAX;
     N=0;
-    Delay_st = TIME_MS2I(DurationTbl[Settings.Delay.Start2Ready.Value]);
+    Delay_st = TIME_MS2I(DurationTbl[ADelay]);
     IChnl.SetTopValue(IPeriod);
     chVTSet(&ITmr, Delay_st, (vtfunc_t)&BuzzTmrCallback, nullptr);
 }
