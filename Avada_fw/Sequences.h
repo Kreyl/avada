@@ -270,10 +270,10 @@ const BaseChunk_t lbsqChargingDone[] = {
 #define BLINK_DELAY_MS      180
 
 const LedSmoothChunk_t lsqSmoothStart[] = {
-        {csSetup, 207, LED_TOP_BRIGHTNESS},
-        {csSetup, 207, 1},
+        {csSetup, 0, 1},
         {csEnd}
 };
+
 
 const LedSmoothChunk_t lsqBlink3[] = {
         {csSetup, 0, LED_TOP_BRIGHTNESS},
